@@ -1,0 +1,29 @@
+{
+  "faculty": {
+    "total": 7
+  },
+  "fdps": {
+    "pending": 1,
+    "approved": 3,
+    "rejected": 2,
+    "total": 6
+  },
+  "reimbursements": {
+    "total": 2,
+    "pending": 0,
+    "approved": 1,
+    "totalAmount": 0.03
+  },
+  "achievements": {
+    "verified": 2
+  },
+  "internships": {
+    "ongoing": 1,
+    "completed": 4,
+    "total": 5
+  },
+  "period": {
+    "startDate": "all time",
+    "endDate": "all time"
+  }
+}

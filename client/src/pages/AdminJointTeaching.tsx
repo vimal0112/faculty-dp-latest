@@ -37,7 +37,8 @@ const AdminJointTeaching = () => {
   const filteredRecords = records.filter((record: any) =>
     record.courseName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     record.courseCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.facultyInvolved?.toLowerCase().includes(searchQuery.toLowerCase())
+    record.facultyInvolved?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    record.facultyId?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const downloadExcel = () => {
@@ -113,7 +114,7 @@ const AdminJointTeaching = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by course name, code, or faculty involved..."
+                placeholder="Search by faculty name, course name, code, or faculty involved..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -125,7 +126,7 @@ const AdminJointTeaching = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Faculty ID</TableHead>
+                  <TableHead>Faculty Name</TableHead>
                   <TableHead>Course Name</TableHead>
                   <TableHead>Course Code</TableHead>
                   <TableHead>Faculty Involved</TableHead>

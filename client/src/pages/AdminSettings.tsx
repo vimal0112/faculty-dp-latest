@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, User, Bell, Shield, Database, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,14 +8,12 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { adminAPI } from '@/lib/api';
 
 const AdminSettings = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [settings, setSettings] = useState({
-    emailNotifications: true,
-    systemAlerts: true,
-    autoApproveFDP: false,
-    requireApprovalForSeminars: true,
+    autoApproveAll: false,
     dataRetentionDays: 365,
     maxFileUploadSize: 10,
   });
@@ -24,16 +22,56 @@ const AdminSettings = () => {
     name: user?.name || 'Admin User',
     email: user?.email || 'admin@university.edu',
   });
+  const [loading, setLoading] = useState(true);
 
-  const handleSaveSettings = () => {
-    // In a real app, this would save to backend
-    toast.success('Settings saved successfully');
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await adminAPI.getSettings();
+        if (data) {
+          setSettings({
+            autoApproveAll: data.autoApproveAll ?? false,
+            dataRetentionDays: data.dataRetentionDays ?? 365,
+            maxFileUploadSize: data.maxFileUploadSize ?? 10,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        toast.error('Failed to load system settings');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSaveSettings = async () => {
+    try {
+      await adminAPI.updateSettings(settings);
+      toast.success('Settings saved successfully');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save settings');
+    }
   };
 
-  const handleSaveProfile = () => {
-    // In a real app, this would save to backend
-    toast.success('Profile updated successfully');
+  const handleSaveProfile = async () => {
+    try {
+      const updatedUser = await adminAPI.updateProfile(profile);
+      // Update local storage / context with new user data if needed
+      if (updatedUser) {
+        localStorage.setItem('user', JSON.stringify({ ...user, ...updatedUser }));
+        // Optional: if your auth context supports updating user directly, do that here.
+        // login(updatedUser.token, updatedUser); // If token is returned
+      }
+      toast.success('Profile updated successfully');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update profile');
+    }
   };
+
+  if (loading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading settings...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -67,55 +105,14 @@ const AdminSettings = () => {
                 id="email"
                 type="email"
                 value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                readOnly
+                className="bg-muted cursor-not-allowed"
               />
             </div>
             <Button onClick={handleSaveProfile} className="w-full">
               <Save className="h-4 w-4 mr-2" />
               Save Profile
             </Button>
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              <CardTitle>Notification Settings</CardTitle>
-            </div>
-            <CardDescription>Configure notification preferences</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive email notifications for important events
-                </p>
-              </div>
-              <Switch
-                checked={settings.emailNotifications}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, emailNotifications: checked })
-                }
-              />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>System Alerts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get alerts for system-wide events
-                </p>
-              </div>
-              <Switch
-                checked={settings.systemAlerts}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, systemAlerts: checked })
-                }
-              />
-            </div>
           </CardContent>
         </Card>
 
@@ -131,30 +128,15 @@ const AdminSettings = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Auto-approve FDPs</Label>
+                <Label>Auto approval for all activities</Label>
                 <p className="text-sm text-muted-foreground">
-                  Automatically approve FDP submissions
+                  When enabled, all user activities are approved automatically without pending admin review
                 </p>
               </div>
               <Switch
-                checked={settings.autoApproveFDP}
+                checked={settings.autoApproveAll}
                 onCheckedChange={(checked) =>
-                  setSettings({ ...settings, autoApproveFDP: checked })
-                }
-              />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Require Approval for Seminars</Label>
-                <p className="text-sm text-muted-foreground">
-                  Seminars require admin approval before being published
-                </p>
-              </div>
-              <Switch
-                checked={settings.requireApprovalForSeminars}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, requireApprovalForSeminars: checked })
+                  setSettings({ ...settings, autoApproveAll: checked })
                 }
               />
             </div>

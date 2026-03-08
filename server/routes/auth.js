@@ -43,7 +43,7 @@ const sendPasswordResetEmail = async (toEmail, resetUrl, userName) => {
   }
 };
 
-// Login - only TCE faculty (@tce.edu) can login
+// Login - only TCE emails (@tce.edu or @student.tce.edu) can login
 router.post('/login', loginValidationRules, handleLoginValidation, async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -125,8 +125,11 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(400).json({ error: 'please fill out this field', fieldErrors: { email: 'please fill out this field' } });
     }
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail.endsWith('@tce.edu')) {
-      return res.status(400).json({ error: 'Only TCE college email addresses (@tce.edu) are allowed', fieldErrors: { email: 'Only TCE college email addresses (@tce.edu) are allowed' } });
+
+    // Check if it ends with a valid domain
+    const validDomains = ['@tce.edu', '@student.tce.edu'];
+    if (!validDomains.some(domain => normalizedEmail.endsWith(domain))) {
+      return res.status(400).json({ error: 'Only TCE college email addresses (@tce.edu or @student.tce.edu) are allowed', fieldErrors: { email: 'Only TCE college email addresses (@tce.edu or @student.tce.edu) are allowed' } });
     }
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
@@ -136,7 +139,7 @@ router.post('/forgot-password', async (req, res) => {
     user.resetPasswordToken = token;
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
     await user.save({ validateBeforeSave: false });
-    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:8080';
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
     await sendPasswordResetEmail(user.email, resetUrl, user.name);
     res.json({ message: 'Password reset link has been sent to your email. Please check your inbox.' });

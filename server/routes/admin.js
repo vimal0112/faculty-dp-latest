@@ -12,6 +12,7 @@ const Event = require('../models/Event');
 const FDPReimbursement = require('../models/FDPReimbursement');
 const Achievement = require('../models/Achievement');
 const Internship = require('../models/Internship');
+const SystemSettings = require('../models/SystemSettings');
 
 // Middleware to check admin role
 const checkAdmin = async (req, res, next) => {
@@ -78,7 +79,7 @@ router.put('/fdp/attended/:id/status', checkAdmin, async (req, res) => {
       { status, updatedAt: Date.now() },
       { new: true }
     ).populate('facultyId', 'name email');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
@@ -120,7 +121,7 @@ router.put('/fdp/organized/:id/status', checkAdmin, async (req, res) => {
       { status, updatedAt: Date.now() },
       { new: true }
     ).populate('facultyId', 'name email');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
@@ -157,13 +158,13 @@ router.put('/seminars/:id/status', checkAdmin, async (req, res) => {
     if (!['pending', 'approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    
+
     const record = await Seminar.findByIdAndUpdate(
       req.params.id,
       { status, updatedAt: Date.now() },
       { new: true }
     ).populate('facultyId', 'name email');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
@@ -197,28 +198,28 @@ router.get('/abl', checkAdmin, async (req, res) => {
 router.put('/abl/:id/status', checkAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    
+
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    
+
     const record = await ABL.findByIdAndUpdate(
       req.params.id,
       { status, updatedAt: Date.now() },
       { new: true }
     ).populate('facultyId', 'name email');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'ABL record not found' });
     }
-    
+
     // Create notification for faculty
     await Notification.create({
       recipientId: record.facultyId._id,
       message: `Your ABL report for ${record.subjectName} has been ${status}`,
       type: status === 'approved' ? 'success' : 'warning',
     });
-    
+
     res.json(record);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -255,13 +256,13 @@ router.put('/adjunct/:id/status', checkAdmin, async (req, res) => {
     if (!['pending', 'approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    
+
     const record = await AdjunctFaculty.findByIdAndUpdate(
       req.params.id,
       { status, updatedAt: Date.now() },
       { new: true }
     ).populate('facultyId', 'name email');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
@@ -360,12 +361,93 @@ router.post('/notifications', checkAdmin, async (req, res) => {
 router.delete('/notifications/:id', checkAdmin, async (req, res) => {
   try {
     const notification = await Notification.findByIdAndDelete(req.params.id);
-    
+
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
     }
-    
+
     res.json({ message: 'Notification deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/notifications/read-all', checkAdmin, async (req, res) => {
+  try {
+    // Admin reading all notifications meant for them? Let's mark all unread notifications as read. 
+    // Wait, the notifications in AdminNotifications.tsx are basically all notifications in the system or sent to admin? 
+    // The previous GET /notifications returns ALL notifications: `Notification.find().populate('recipientId'...`
+    // If the admin is marking all as read, they are probably marking ALL system notifications as read for themselves, or rather just all of them.
+    // Let's just update all where read is false.
+    await Notification.updateMany({ read: false }, { read: true });
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/notifications/:id/read', checkAdmin, async (req, res) => {
+  try {
+    const notification = await Notification.findByIdAndUpdate(
+      req.params.id,
+      { read: true },
+      { new: true }
+    );
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    res.json(notification);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== System Settings Management ==========
+router.get('/settings', checkAdmin, async (req, res) => {
+  try {
+    let settings = await SystemSettings.findOne();
+    if (!settings) {
+      // Return default settings if none exist
+      settings = await SystemSettings.create({});
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/settings', checkAdmin, async (req, res) => {
+  try {
+    let settings = await SystemSettings.findOne();
+    if (!settings) {
+      settings = new SystemSettings(req.body);
+    } else {
+      Object.assign(settings, req.body, { updatedAt: Date.now() });
+    }
+    await settings.save();
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========== Admin Profile Management ==========
+router.put('/profile', checkAdmin, async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name },
+      { new: true }
+    ).select('-password');
+
+    res.json(updatedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -426,26 +508,26 @@ router.put('/reimbursements/:id/status', checkAdmin, async (req, res) => {
   try {
     const userId = req.headers['user-id'];
     const { status, reviewComments } = req.body;
-    
+
     if (!['pending', 'approved', 'rejected', 'processed'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    
+
     const updateData = {
       status,
       reviewedBy: userId,
       reviewedDate: Date.now(),
       updatedAt: Date.now(),
     };
-    
+
     if (status === 'processed') {
       updateData.processedDate = Date.now();
     }
-    
+
     if (reviewComments) {
       updateData.reviewComments = reviewComments;
     }
-    
+
     const record = await FDPReimbursement.findByIdAndUpdate(
       req.params.id,
       updateData,
@@ -453,7 +535,7 @@ router.put('/reimbursements/:id/status', checkAdmin, async (req, res) => {
     )
       .populate('facultyId', 'name email')
       .populate('fdpId', 'title');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
@@ -489,24 +571,24 @@ router.put('/achievements/:id/verify', checkAdmin, async (req, res) => {
   try {
     const userId = req.headers['user-id'];
     const { status } = req.body;
-    
+
     if (!['pending', 'verified', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    
+
     const updateData = {
       status,
       verifiedBy: userId,
       verifiedDate: Date.now(),
       updatedAt: Date.now(),
     };
-    
+
     const record = await Achievement.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
     ).populate('facultyId', 'name email');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
@@ -543,17 +625,17 @@ router.put('/internships/:id/status', checkAdmin, async (req, res) => {
     if (!['pending', 'approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    
+
     const record = await Internship.findByIdAndUpdate(
       req.params.id,
       { status, updatedAt: Date.now() },
       { new: true }
     ).populate('facultyId', 'name email');
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     // Create notification for faculty
     await Notification.create({
       userId: record.facultyId._id,
@@ -563,7 +645,7 @@ router.put('/internships/:id/status', checkAdmin, async (req, res) => {
       relatedId: record._id,
       relatedModel: 'Internship'
     });
-    
+
     res.json(record);
   } catch (error) {
     res.status(500).json({ error: error.message });

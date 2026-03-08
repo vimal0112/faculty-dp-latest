@@ -31,7 +31,7 @@ function validateSignupForm(data: {
   if (!data.name?.trim()) errors.name = BLANK_FIELD_MSG;
 
   if (!data.email?.trim()) errors.email = BLANK_FIELD_MSG;
-  else if (!data.email.toLowerCase().endsWith('@tce.edu')) errors.email = 'Only TCE college email addresses (@tce.edu) are allowed to register';
+  else if (!data.email.toLowerCase().endsWith('@tce.edu') && !data.email.toLowerCase().endsWith('@student.tce.edu')) errors.email = 'Only TCE college email addresses (@tce.edu or @student.tce.edu) are allowed to register';
 
   if (!data.password) errors.password = BLANK_FIELD_MSG;
   else if (data.password.length < 8) errors.password = 'password must contain 8 characters long (having combination of alphanumeric)';
@@ -53,7 +53,7 @@ function validateSignupForm(data: {
 function validateLoginForm(data: { email: string; password: string; role: string }): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!data.email?.trim()) errors.email = BLANK_FIELD_MSG;
-  else if (!data.email.toLowerCase().endsWith('@tce.edu')) errors.email = 'Only TCE college faculty (@tce.edu) can login';
+  else if (!data.email.toLowerCase().endsWith('@tce.edu') && !data.email.toLowerCase().endsWith('@student.tce.edu')) errors.email = 'Only TCE college faculty/students (@tce.edu or @student.tce.edu) can login';
   if (!data.password) errors.password = BLANK_FIELD_MSG;
   if (!data.role?.trim()) errors.role = BLANK_FIELD_MSG;
   return errors;
@@ -184,8 +184,8 @@ function Login() {
       setForgotError('please fill out this field');
       return;
     }
-    if (!forgotEmail.toLowerCase().endsWith('@tce.edu')) {
-      setForgotError('Only TCE college email addresses (@tce.edu) are allowed');
+    if (!forgotEmail.toLowerCase().endsWith('@tce.edu') && !forgotEmail.toLowerCase().endsWith('@student.tce.edu')) {
+      setForgotError('Only TCE college email addresses (@tce.edu or @student.tce.edu) are allowed');
       return;
     }
     setForgotLoading(true);
@@ -215,7 +215,7 @@ function Login() {
           </div>
           <CardTitle className="text-2xl font-bold">{isSignup ? 'Create Account' : 'Welcome Back'}</CardTitle>
           <CardDescription>
-            {isSignup ? 'Sign up to access your faculty portfolio (TCE faculty only)' : 'Sign in to access your faculty portfolio'}
+            {isSignup ? 'Sign up to access your facility portfolio (TCE users only)' : 'Sign in to access your faculty portfolio'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -319,13 +319,13 @@ function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder={isSignup ? "your.name@tce.edu" : "Enter your email"}
+                placeholder={isSignup ? "your.name@student.tce.edu" : "Enter your email"}
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); clearErrors(); }}
                 className={hasFieldError('email') ? 'border-destructive' : ''}
               />
               {hasFieldError('email') && <p className="text-sm text-destructive">{getFieldError('email')}</p>}
-              {isSignup && <p className="text-xs text-muted-foreground">Only @tce.edu emails allowed</p>}
+              {isSignup && <p className="text-xs text-muted-foreground">Only @tce.edu or @student.tce.edu emails allowed</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -430,7 +430,7 @@ function Login() {
               <Input
                 id="forgotEmail"
                 type="email"
-                placeholder="your.name@tce.edu"
+                placeholder="your.name@student.tce.edu"
                 value={forgotEmail}
                 onChange={(e) => { setForgotEmail(e.target.value); setForgotError(''); }}
               />

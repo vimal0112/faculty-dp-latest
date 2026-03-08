@@ -1,0 +1,10 @@
+{
+  "keys": [
+    "summary",
+    "data",
+    "filters",
+    "generatedAt",
+    "generatedBy"
+  ],
+  "error": null
+}

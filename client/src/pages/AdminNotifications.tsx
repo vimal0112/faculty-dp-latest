@@ -41,7 +41,7 @@ const AdminNotifications = () => {
         adminAPI.getNotifications(),
         adminAPI.getFaculty(),
       ]);
-      
+
       setNotificationList((notificationsData || []).map((item: any) => ({
         id: item._id || item.id,
         recipientId: item.recipientId?._id || item.recipientId || '',
@@ -51,7 +51,7 @@ const AdminNotifications = () => {
         read: item.read || false,
         type: item.type || 'info',
       })));
-      
+
       setFaculty(facultyData || []);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -61,11 +61,17 @@ const AdminNotifications = () => {
     }
   };
 
-  const handleMarkAsRead = (id: string) => {
-    setNotificationList(notificationList.map(n => 
-      n.id === id ? { ...n, read: true } : n
-    ));
-    toast.success('Marked as read');
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await adminAPI.markNotificationRead(id);
+      setNotificationList(notificationList.map(n =>
+        n.id === id ? { ...n, read: true } : n
+      ));
+      toast.success('Marked as read');
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+      toast.error('Failed to mark notification as read');
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -79,9 +85,15 @@ const AdminNotifications = () => {
     }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotificationList(notificationList.map(n => ({ ...n, read: true })));
-    toast.success('All notifications marked as read');
+  const handleMarkAllAsRead = async () => {
+    try {
+      await adminAPI.markAllNotificationsRead();
+      setNotificationList(notificationList.map(n => ({ ...n, read: true })));
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+      toast.error('Failed to mark all notifications as read');
+    }
   };
 
   const handleSendNotification = async () => {
@@ -96,7 +108,7 @@ const AdminNotifications = () => {
         message: sendForm.message,
         type: sendForm.type,
       });
-      
+
       setSendForm({ recipientId: '', message: '', type: 'info' });
       setIsSendDialogOpen(false);
       toast.success('Notification sent successfully');
@@ -211,9 +223,8 @@ const AdminNotifications = () => {
             return (
               <Card
                 key={notification.id}
-                className={`transition-all hover:shadow-hover ${
-                  !notification.read ? 'border-l-4 border-l-primary bg-primary/5' : ''
-                }`}
+                className={`transition-all hover:shadow-hover ${!notification.read ? 'border-l-4 border-l-primary bg-primary/5' : ''
+                  }`}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">

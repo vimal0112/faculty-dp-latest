@@ -42,7 +42,7 @@ const AdminReimbursements = () => {
 
   const handleStatusUpdate = async (status: string) => {
     if (!reviewDialog.record) return;
-    
+
     try {
       await adminAPI.updateReimbursementStatus(reviewDialog.record._id || reviewDialog.record.id, status, reviewComments);
       toast({ title: `Reimbursement ${status} successfully` });
@@ -81,10 +81,10 @@ const AdminReimbursements = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    
+
     doc.setFontSize(18);
     doc.text('FDP Reimbursement Records', 14, 20);
-    
+
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
 
@@ -195,15 +195,13 @@ const AdminReimbursements = () => {
                               <Eye className="h-4 w-4" />
                             </Button>
                           )}
-                          {record.status === 'pending' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setReviewDialog({ open: true, record })}
-                            >
-                              Review
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setReviewDialog({ open: true, record })}
+                          >
+                            {record.status === 'pending' ? 'Review' : 'View'}
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -253,39 +251,42 @@ const AdminReimbursements = () => {
                 </div>
               )}
 
-              <div>
-                <Label htmlFor="reviewComments">Review Comments</Label>
-                <Textarea
-                  id="reviewComments"
-                  value={reviewComments}
-                  onChange={(e) => setReviewComments(e.target.value)}
-                  rows={3}
-                  placeholder="Add comments for the faculty member..."
-                />
-              </div>
+              {reviewDialog.record.status === 'pending' && (
+                <>
+                  <div>
+                    <Label htmlFor="reviewComments">Review Comments</Label>
+                    <Textarea
+                      id="reviewComments"
+                      value={reviewComments}
+                      onChange={(e) => setReviewComments(e.target.value)}
+                      rows={3}
+                      placeholder="Add comments for the faculty member..."
+                    />
+                  </div>
 
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="destructive"
-                  onClick={() => handleStatusUpdate('rejected')}
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Reject
-                </Button>
-                <Button
-                  onClick={() => handleStatusUpdate('approved')}
-                >
-                  <Check className="mr-2 h-4 w-4" />
-                  Approve
-                </Button>
-                <Button
-                  onClick={() => handleStatusUpdate('processed')}
-                  variant="default"
-                >
-                  <Check className="mr-2 h-4 w-4" />
-                  Mark as Processed
-                </Button>
-              </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleStatusUpdate('rejected')}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Reject
+                    </Button>
+                    <Button
+                      onClick={() => handleStatusUpdate('approved')}
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Approve
+                    </Button>
+                  </div>
+                </>
+              )}
+              {reviewDialog.record.status !== 'pending' && reviewDialog.record.comments && (
+                <div className="text-sm mt-4">
+                  <span className="text-muted-foreground">Admin Comments: </span>
+                  <p>{reviewDialog.record.comments}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

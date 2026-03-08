@@ -918,6 +918,37 @@ export const adminAPI = {
     });
   },
 
+  markAllNotificationsRead: async () => {
+    return apiRequest<{ message: string }>('/admin/notifications/read-all', {
+      method: 'PUT',
+    });
+  },
+
+  markNotificationRead: async (id: string) => {
+    return apiRequest<any>(`/admin/notifications/${id}/read`, {
+      method: 'PUT',
+    });
+  },
+
+  // Settings & Profile
+  getSettings: async () => {
+    return apiRequest<any>('/admin/settings');
+  },
+
+  updateSettings: async (data: any) => {
+    return apiRequest<any>('/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateProfile: async (data: { name: string; email: string }) => {
+    return apiRequest<any>('/admin/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
   // Dashboard
   getDashboard: async () => {
     return apiRequest<{ stats: any }>('/admin/dashboard');
@@ -1032,7 +1063,7 @@ export const auditAPI = {
     if (params?.endDate) queryParams.append('endDate', params.endDate);
     if (params?.department) queryParams.append('department', params.department);
     if (params?.facultyId) queryParams.append('facultyId', params.facultyId);
-    
+
     const url = `/audit/data${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return apiRequest<any>(url);
   },
@@ -1046,7 +1077,7 @@ export const auditAPI = {
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
     if (params?.department) queryParams.append('department', params.department);
-    
+
     const url = `/audit/stats${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return apiRequest<any>(url);
   },

@@ -1,11 +1,11 @@
 const { body, validationResult } = require('express-validator');
 
-// TCE email domain - only @tce.edu allowed
-const TCE_EMAIL_DOMAIN = '@tce.edu';
+// TCE email domains - @tce.edu and @student.tce.edu allowed
+const TCE_EMAIL_DOMAINS = ['@tce.edu', '@student.tce.edu'];
 
 const isTceEmail = (value) => {
   const normalized = (value || '').toLowerCase().trim();
-  return normalized.endsWith(TCE_EMAIL_DOMAIN);
+  return TCE_EMAIL_DOMAINS.some(domain => normalized.endsWith(domain));
 };
 
 // Validation rules for login - TCE email only
@@ -16,7 +16,7 @@ const loginValidationRules = [
     .withMessage('please fill out this field')
     .custom((value) => {
       if (!isTceEmail(value)) {
-        throw new Error('Only TCE college faculty (@tce.edu) can login');
+        throw new Error('Only TCE college faculty/students (@tce.edu or @student.tce.edu) can login');
       }
       return true;
     }),
@@ -61,7 +61,7 @@ const signupValidationRules = [
     .withMessage('please fill out this field')
     .custom((value) => {
       if (!isTceEmail(value)) {
-        throw new Error('Only TCE college email addresses (@tce.edu) are allowed to register');
+        throw new Error('Only TCE college email addresses (@tce.edu or @student.tce.edu) are allowed to register');
       }
       return true;
     }),
@@ -93,7 +93,7 @@ const signupValidationRules = [
 // Middleware to format validation errors - returns field-specific messages
 const handleSignupValidation = (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     const fieldErrors = {};
     errors.array().forEach((err) => {
@@ -101,9 +101,9 @@ const handleSignupValidation = (req, res, next) => {
         fieldErrors[err.path] = err.msg;
       }
     });
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Validation failed',
-      fieldErrors 
+      fieldErrors
     });
   }
   next();

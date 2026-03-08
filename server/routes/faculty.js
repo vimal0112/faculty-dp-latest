@@ -14,6 +14,20 @@ const FDPReimbursement = require('../models/FDPReimbursement');
 const Achievement = require('../models/Achievement');
 const Internship = require('../models/Internship');
 const UpcomingEvent = require('../models/UpcomingEvent');
+const SystemSettings = require('../models/SystemSettings');
+
+// Middleware to conditionally auto-approve activities
+const checkAutoApprove = async (req, res, next) => {
+  try {
+    const settings = await SystemSettings.findOne();
+    if (settings && settings.autoApproveAll) {
+      req.body.status = 'approved';
+    }
+  } catch (error) {
+    console.error('Error fetching SystemSettings for auto-approval:', error);
+  }
+  next();
+};
 
 // Configure multer for file uploads
 const uploadsDir = path.join(__dirname, '../uploads/certificates');
@@ -37,10 +51,10 @@ const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
   const extname = allowedTypes.test(ext);
   const mimetype = file.mimetype === 'application/pdf' ||
-                   file.mimetype === 'image/jpeg' ||
-                   file.mimetype === 'image/jpg' ||
-                   file.mimetype === 'image/png' ||
-                   file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    file.mimetype === 'image/jpeg' ||
+    file.mimetype === 'image/jpg' ||
+    file.mimetype === 'image/png' ||
+    file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
   if (extname && mimetype) {
     return cb(null, true);
@@ -74,7 +88,7 @@ router.get('/fdp/attended', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/fdp/attended', getFacultyId, upload.single('certificate'), async (req, res) => {
+router.post('/fdp/attended', getFacultyId, upload.single('certificate'), checkAutoApprove, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
@@ -173,7 +187,7 @@ router.get('/fdp/organized', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/fdp/organized', getFacultyId, upload.single('certificate'), async (req, res) => {
+router.post('/fdp/organized', getFacultyId, upload.single('certificate'), checkAutoApprove, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
@@ -270,27 +284,27 @@ router.get('/seminars', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/seminars', getFacultyId, upload.single('certificate'), async (req, res) => {
+router.post('/seminars', getFacultyId, upload.single('certificate'), checkAutoApprove, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const { attendees } = req.body;
     const attendeesCount = parseInt(attendees) || 0;
-    
+
     if (attendeesCount <= 0) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Attendees count must be greater than zero.' });
     }
-    
+
     const recordData = {
       ...req.body,
       facultyId: req.facultyId,
       attendees: attendeesCount,
       certificate: `/uploads/certificates/${req.file.filename}`,
     };
-    
+
     const record = new Seminar(recordData);
     await record.save();
     res.status(201).json(record);
@@ -309,12 +323,12 @@ router.put('/seminars/:id', getFacultyId, upload.single('certificate'), async (r
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     const updateData = {
       ...req.body,
       updatedAt: Date.now()
     };
-    
+
     // Validate attendees count if provided
     if (req.body.attendees !== undefined) {
       const attendeesCount = parseInt(req.body.attendees) || 0;
@@ -324,7 +338,7 @@ router.put('/seminars/:id', getFacultyId, upload.single('certificate'), async (r
       }
       updateData.attendees = attendeesCount;
     }
-    
+
     // If certificate file is uploaded, save the path
     if (req.file) {
       updateData.certificate = `/uploads/certificates/${req.file.filename}`;
@@ -338,7 +352,7 @@ router.put('/seminars/:id', getFacultyId, upload.single('certificate'), async (r
     } else if (!oldRecord.certificate) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const record = await Seminar.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
@@ -384,25 +398,25 @@ router.get('/abl', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/abl', getFacultyId, upload.single('proofDoc'), async (req, res) => {
+router.post('/abl', getFacultyId, upload.single('proofDoc'), checkAutoApprove, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Proof document is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const { fromDate, toDate } = req.body;
     if (!fromDate || !toDate) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'From date and To date are required.' });
     }
-    
+
     const from = new Date(fromDate);
     const to = new Date(toDate);
     if (to < from) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'To date must be on or after From date.' });
     }
-    
+
     const recordData = {
       ...req.body,
       fromDate: from,
@@ -410,7 +424,7 @@ router.post('/abl', getFacultyId, upload.single('proofDoc'), async (req, res) =>
       facultyId: req.facultyId,
       proofDoc: `/uploads/certificates/${req.file.filename}`,
     };
-    
+
     const record = new ABL(recordData);
     await record.save();
     res.status(201).json(record);
@@ -429,9 +443,9 @@ router.put('/abl/:id', getFacultyId, upload.single('proofDoc'), async (req, res)
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     const updateData = { ...req.body, updatedAt: Date.now() };
-    
+
     if (req.file) {
       updateData.proofDoc = `/uploads/certificates/${req.file.filename}`;
       if (oldRecord.proofDoc) {
@@ -441,7 +455,7 @@ router.put('/abl/:id', getFacultyId, upload.single('proofDoc'), async (req, res)
     } else if (!oldRecord.proofDoc) {
       return res.status(400).json({ error: 'Proof document is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const { fromDate, toDate } = req.body;
     if (fromDate && toDate) {
       const from = new Date(fromDate);
@@ -453,7 +467,7 @@ router.put('/abl/:id', getFacultyId, upload.single('proofDoc'), async (req, res)
       updateData.fromDate = from;
       updateData.toDate = to;
     }
-    
+
     const record = await ABL.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
@@ -493,41 +507,41 @@ router.get('/joint-teaching', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/joint-teaching', getFacultyId, upload.single('certificate'), async (req, res) => {
+router.post('/joint-teaching', getFacultyId, upload.single('certificate'), checkAutoApprove, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const { fromDate, toDate, toBePaid, hours } = req.body;
-    
+
     // Validate dates
     if (!fromDate || !toDate) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'From date and To date are required.' });
     }
-    
+
     const from = new Date(fromDate);
     const to = new Date(toDate);
     if (to < from) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'To date must be on or after From date.' });
     }
-    
+
     // Validate toBePaid is a natural number (positive integer)
     const toBePaidNum = parseFloat(toBePaid);
     if (isNaN(toBePaidNum) || toBePaidNum < 0 || !Number.isInteger(toBePaidNum)) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'To be paid must be a natural number (positive integer).' });
     }
-    
+
     // Validate hours
     const hoursNum = parseInt(hours);
     if (isNaN(hoursNum) || hoursNum < 1) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Hours must be at least 1.' });
     }
-    
+
     const recordData = {
       ...req.body,
       fromDate: from,
@@ -537,7 +551,7 @@ router.post('/joint-teaching', getFacultyId, upload.single('certificate'), async
       facultyId: req.facultyId,
       certificate: `/uploads/certificates/${req.file.filename}`,
     };
-    
+
     const record = new JointTeaching(recordData);
     await record.save();
     res.status(201).json(record);
@@ -556,12 +570,12 @@ router.put('/joint-teaching/:id', getFacultyId, upload.single('certificate'), as
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     const updateData = {
       ...req.body,
       updatedAt: Date.now()
     };
-    
+
     // If certificate file is uploaded, save the path
     if (req.file) {
       updateData.certificate = `/uploads/certificates/${req.file.filename}`;
@@ -575,9 +589,9 @@ router.put('/joint-teaching/:id', getFacultyId, upload.single('certificate'), as
     } else if (!oldRecord.certificate) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const { fromDate, toDate, toBePaid, hours } = req.body;
-    
+
     // Validate dates if provided
     if (fromDate && toDate) {
       const from = new Date(fromDate);
@@ -589,7 +603,7 @@ router.put('/joint-teaching/:id', getFacultyId, upload.single('certificate'), as
       updateData.fromDate = from;
       updateData.toDate = to;
     }
-    
+
     // Validate toBePaid if provided
     if (toBePaid !== undefined) {
       const toBePaidNum = parseFloat(toBePaid);
@@ -599,7 +613,7 @@ router.put('/joint-teaching/:id', getFacultyId, upload.single('certificate'), as
       }
       updateData.toBePaid = toBePaidNum;
     }
-    
+
     // Validate hours if provided
     if (hours !== undefined) {
       const hoursNum = parseInt(hours);
@@ -609,7 +623,7 @@ router.put('/joint-teaching/:id', getFacultyId, upload.single('certificate'), as
       }
       updateData.hours = hoursNum;
     }
-    
+
     const record = await JointTeaching.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
@@ -655,25 +669,25 @@ router.get('/adjunct', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/adjunct', getFacultyId, upload.single('certificate'), async (req, res) => {
+router.post('/adjunct', getFacultyId, upload.single('certificate'), checkAutoApprove, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const { fromDate, toDate } = req.body;
     if (!fromDate || !toDate) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'From date and To date are required.' });
     }
-    
+
     const from = new Date(fromDate);
     const to = new Date(toDate);
     if (to < from) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'To date must be on or after From date.' });
     }
-    
+
     const recordData = {
       ...req.body,
       fromDate: from,
@@ -681,7 +695,7 @@ router.post('/adjunct', getFacultyId, upload.single('certificate'), async (req, 
       facultyId: req.facultyId,
       certificate: `/uploads/certificates/${req.file.filename}`,
     };
-    
+
     const record = new AdjunctFaculty(recordData);
     await record.save();
     res.status(201).json(record);
@@ -700,9 +714,9 @@ router.put('/adjunct/:id', getFacultyId, upload.single('certificate'), async (re
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     const updateData = { ...req.body, updatedAt: Date.now() };
-    
+
     if (req.file) {
       updateData.certificate = `/uploads/certificates/${req.file.filename}`;
       if (oldRecord.certificate) {
@@ -712,7 +726,7 @@ router.put('/adjunct/:id', getFacultyId, upload.single('certificate'), async (re
     } else if (!oldRecord.certificate) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, PNG, or DOCX file.' });
     }
-    
+
     const { fromDate, toDate } = req.body;
     if (fromDate && toDate) {
       const from = new Date(fromDate);
@@ -724,7 +738,7 @@ router.put('/adjunct/:id', getFacultyId, upload.single('certificate'), async (re
       updateData.fromDate = from;
       updateData.toDate = to;
     }
-    
+
     const record = await AdjunctFaculty.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
@@ -800,11 +814,11 @@ router.delete('/notifications/:id', getFacultyId, async (req, res) => {
       _id: req.params.id,
       recipientId: req.facultyId
     });
-    
+
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
     }
-    
+
     res.json({ message: 'Notification deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -855,33 +869,33 @@ router.get('/reimbursements', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/reimbursements', getFacultyId, upload.single('receiptDocument'), async (req, res) => {
+router.post('/reimbursements', getFacultyId, upload.single('receiptDocument'), checkAutoApprove, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Receipt document is mandatory. Please upload a PDF, JPG, or PNG file.' });
     }
-    
+
     const { amount, expenseType, otherExpenseType, accountNumber } = req.body;
-    
+
     // Validate amount - must be positive whole number
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0 || !Number.isInteger(amountNum)) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Amount must be a positive whole number.' });
     }
-    
+
     // Validate account number - must be numeric only and at least 10 digits
     if (accountNumber && (!/^\d+$/.test(accountNumber) || accountNumber.length < 10)) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Account number must contain only numbers and be at least 10 digits long.' });
     }
-    
+
     // Validate other expense type if selected
     if (expenseType === 'other' && (!otherExpenseType || !otherExpenseType.trim())) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Other expense type is required when "Other" is selected.' });
     }
-    
+
     const recordData = {
       ...req.body,
       facultyId: req.facultyId,
@@ -889,7 +903,7 @@ router.post('/reimbursements', getFacultyId, upload.single('receiptDocument'), a
       expenseType: expenseType === 'other' ? otherExpenseType : expenseType,
       receiptDocument: `/uploads/certificates/${req.file.filename}`,
     };
-    
+
     const record = new FDPReimbursement(recordData);
     await record.save();
     res.status(201).json(record);
@@ -908,13 +922,13 @@ router.put('/reimbursements/:id', getFacultyId, upload.single('receiptDocument')
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     const { amount, expenseType, otherExpenseType, accountNumber } = req.body;
     const updateData = {
       ...req.body,
       updatedAt: Date.now()
     };
-    
+
     // Validate amount if provided
     if (amount !== undefined) {
       const amountNum = parseFloat(amount);
@@ -924,19 +938,19 @@ router.put('/reimbursements/:id', getFacultyId, upload.single('receiptDocument')
       }
       updateData.amount = amountNum;
     }
-    
+
     // Validate account number if provided
     if (accountNumber !== undefined && (!/^\d+$/.test(accountNumber) || accountNumber.length < 10)) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Account number must contain only numbers and be at least 10 digits long.' });
     }
-    
+
     // Validate other expense type if provided
     if (expenseType === 'other' && (!otherExpenseType || !otherExpenseType.trim())) {
       if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'Other expense type is required when "Other" is selected.' });
     }
-    
+
     // Handle receipt document upload
     if (req.file) {
       updateData.receiptDocument = `/uploads/certificates/${req.file.filename}`;
@@ -950,13 +964,13 @@ router.put('/reimbursements/:id', getFacultyId, upload.single('receiptDocument')
     } else if (!oldRecord.receiptDocument) {
       return res.status(400).json({ error: 'Receipt document is mandatory. Please upload a PDF, JPG, or PNG file.' });
     }
-    
+
     const record = await FDPReimbursement.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
       { new: true }
     );
-    
+
     if (!record) {
       if (req.file) {
         fs.unlinkSync(req.file.path);
@@ -981,7 +995,7 @@ router.delete('/reimbursements/:id', getFacultyId, async (req, res) => {
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     // Delete receipt document if exists
     if (record.receiptDocument) {
       const filePath = path.join(__dirname, '..', record.receiptDocument);
@@ -989,7 +1003,7 @@ router.delete('/reimbursements/:id', getFacultyId, async (req, res) => {
         fs.unlinkSync(filePath);
       }
     }
-    
+
     res.json({ message: 'Record deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1010,15 +1024,15 @@ router.get('/achievements', getFacultyId, async (req, res) => {
 router.post('/achievements', getFacultyId, upload.fields([
   { name: 'certificate', maxCount: 1 },
   { name: 'supportingDocument', maxCount: 1 }
-]), async (req, res) => {
+]), checkAutoApprove, async (req, res) => {
   try {
     const { category, patentType } = req.body;
-    
+
     // Validate certificate is mandatory
     if (!req.files?.certificate) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a PDF, JPG, or PNG file.' });
     }
-    
+
     // Validate patent type if patent is selected
     if (category === 'patent' && (!patentType || !patentType.trim())) {
       if (req.files) {
@@ -1030,17 +1044,17 @@ router.post('/achievements', getFacultyId, upload.fields([
       }
       return res.status(400).json({ error: 'Patent type is required when patent category is selected.' });
     }
-    
+
     const recordData = {
       ...req.body,
       facultyId: req.facultyId,
       certificate: `/uploads/certificates/${req.files.certificate[0].filename}`,
     };
-    
+
     if (req.files?.supportingDocument) {
       recordData.supportingDocument = `/uploads/certificates/${req.files.supportingDocument[0].filename}`;
     }
-    
+
     const record = new Achievement(recordData);
     await record.save();
     res.status(201).json(record);
@@ -1067,7 +1081,7 @@ router.put('/achievements/:id', getFacultyId, upload.fields([
       ...req.body,
       updatedAt: Date.now()
     };
-    
+
     const oldRecord = await Achievement.findById(req.params.id);
     if (!oldRecord) {
       if (req.files) {
@@ -1079,7 +1093,7 @@ router.put('/achievements/:id', getFacultyId, upload.fields([
       }
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     // Validate patent type if patent is selected
     if (category === 'patent' && (!patentType || !patentType.trim())) {
       if (req.files) {
@@ -1091,7 +1105,7 @@ router.put('/achievements/:id', getFacultyId, upload.fields([
       }
       return res.status(400).json({ error: 'Patent type is required when patent category is selected.' });
     }
-    
+
     if (req.files?.certificate) {
       updateData.certificate = `/uploads/certificates/${req.files.certificate[0].filename}`;
       if (oldRecord && oldRecord.certificate) {
@@ -1101,7 +1115,7 @@ router.put('/achievements/:id', getFacultyId, upload.fields([
         }
       }
     }
-    
+
     if (req.files?.supportingDocument) {
       updateData.supportingDocument = `/uploads/certificates/${req.files.supportingDocument[0].filename}`;
       if (oldRecord && oldRecord.supportingDocument) {
@@ -1111,13 +1125,13 @@ router.put('/achievements/:id', getFacultyId, upload.fields([
         }
       }
     }
-    
+
     const record = await Achievement.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
       { new: true }
     );
-    
+
     if (!record) {
       if (req.files) {
         Object.values(req.files).flat().forEach(file => {
@@ -1150,7 +1164,7 @@ router.delete('/achievements/:id', getFacultyId, async (req, res) => {
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     // Delete documents if exist
     if (record.certificate) {
       const filePath = path.join(__dirname, '..', record.certificate);
@@ -1164,7 +1178,7 @@ router.delete('/achievements/:id', getFacultyId, async (req, res) => {
         fs.unlinkSync(filePath);
       }
     }
-    
+
     res.json({ message: 'Record deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1185,22 +1199,22 @@ router.get('/internships', getFacultyId, async (req, res) => {
 router.post('/internships', getFacultyId, upload.fields([
   { name: 'certificate', maxCount: 1 },
   { name: 'report', maxCount: 1 }
-]), async (req, res) => {
+]), checkAutoApprove, async (req, res) => {
   try {
     // Validate mandatory fields
     if (!req.files?.certificate) {
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a certificate file.' });
     }
-    
+
     if (!req.files?.report) {
       return res.status(400).json({ error: 'Internship report is mandatory. Please upload a report file.' });
     }
-    
+
     const recordData = {
       ...req.body,
       facultyId: req.facultyId,
     };
-    
+
     if (req.body.startDate) recordData.startDate = new Date(req.body.startDate);
     if (req.body.endDate) recordData.endDate = new Date(req.body.endDate);
     if (req.body.duration) recordData.duration = parseInt(req.body.duration);
@@ -1208,19 +1222,19 @@ router.post('/internships', getFacultyId, upload.fields([
     if (req.body.stipend) recordData.stipend = parseFloat(req.body.stipend);
     if (req.body.feedbackRating) recordData.feedbackRating = parseInt(req.body.feedbackRating);
     if (req.body.skillsGained) {
-      recordData.skillsGained = typeof req.body.skillsGained === 'string' 
+      recordData.skillsGained = typeof req.body.skillsGained === 'string'
         ? req.body.skillsGained.split(',').map(s => s.trim())
         : req.body.skillsGained;
     }
-    
+
     if (req.files?.certificate) {
       recordData.certificate = `/uploads/certificates/${req.files.certificate[0].filename}`;
     }
-    
+
     if (req.files?.report) {
       recordData.report = `/uploads/certificates/${req.files.report[0].filename}`;
     }
-    
+
     const record = new Internship(recordData);
     await record.save();
     res.status(201).json(record);
@@ -1245,7 +1259,7 @@ router.put('/internships/:id', getFacultyId, upload.fields([
       ...req.body,
       updatedAt: Date.now()
     };
-    
+
     if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
     if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
     if (req.body.duration) updateData.duration = parseInt(req.body.duration);
@@ -1253,11 +1267,11 @@ router.put('/internships/:id', getFacultyId, upload.fields([
     if (req.body.stipend) updateData.stipend = parseFloat(req.body.stipend);
     if (req.body.feedbackRating) updateData.feedbackRating = parseInt(req.body.feedbackRating);
     if (req.body.skillsGained) {
-      updateData.skillsGained = typeof req.body.skillsGained === 'string' 
+      updateData.skillsGained = typeof req.body.skillsGained === 'string'
         ? req.body.skillsGained.split(',').map(s => s.trim())
         : req.body.skillsGained;
     }
-    
+
     const oldRecord = await Internship.findById(req.params.id);
     if (!oldRecord) {
       if (req.files) {
@@ -1269,7 +1283,7 @@ router.put('/internships/:id', getFacultyId, upload.fields([
       }
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     if (req.files?.certificate) {
       updateData.certificate = `/uploads/certificates/${req.files.certificate[0].filename}`;
       if (oldRecord && oldRecord.certificate) {
@@ -1279,7 +1293,7 @@ router.put('/internships/:id', getFacultyId, upload.fields([
         }
       }
     }
-    
+
     if (req.files?.report) {
       updateData.report = `/uploads/certificates/${req.files.report[0].filename}`;
       if (oldRecord && oldRecord.report) {
@@ -1289,13 +1303,13 @@ router.put('/internships/:id', getFacultyId, upload.fields([
         }
       }
     }
-    
+
     const record = await Internship.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
       { new: true }
     );
-    
+
     if (!record) {
       if (req.files) {
         Object.values(req.files).flat().forEach(file => {
@@ -1328,7 +1342,7 @@ router.delete('/internships/:id', getFacultyId, async (req, res) => {
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     // Delete documents if exist
     if (record.certificate) {
       const filePath = path.join(__dirname, '..', record.certificate);
@@ -1342,7 +1356,7 @@ router.delete('/internships/:id', getFacultyId, async (req, res) => {
         fs.unlinkSync(filePath);
       }
     }
-    
+
     res.json({ message: 'Record deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1360,17 +1374,17 @@ router.get('/upcoming-events', getFacultyId, async (req, res) => {
   }
 });
 
-router.post('/upcoming-events', getFacultyId, async (req, res) => {
+router.post('/upcoming-events', getFacultyId, checkAutoApprove, async (req, res) => {
   try {
     const eventData = {
       ...req.body,
       facultyId: req.facultyId,
     };
-    
+
     if (req.body.startDate) eventData.startDate = new Date(req.body.startDate);
     if (req.body.endDate) eventData.endDate = new Date(req.body.endDate);
     if (req.body.duration) eventData.duration = parseInt(req.body.duration);
-    
+
     const record = new UpcomingEvent(eventData);
     await record.save();
     res.status(201).json(record);
@@ -1385,21 +1399,21 @@ router.put('/upcoming-events/:id', getFacultyId, async (req, res) => {
       ...req.body,
       updatedAt: Date.now()
     };
-    
+
     if (req.body.startDate) updateData.startDate = new Date(req.body.startDate);
     if (req.body.endDate) updateData.endDate = new Date(req.body.endDate);
     if (req.body.duration) updateData.duration = parseInt(req.body.duration);
-    
+
     const record = await UpcomingEvent.findOneAndUpdate(
       { _id: req.params.id, facultyId: req.facultyId },
       updateData,
       { new: true }
     );
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     res.json(record);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1413,11 +1427,11 @@ router.put('/upcoming-events/:id/notification', getFacultyId, async (req, res) =
       { notificationSent: true },
       { new: true }
     );
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     res.json(record);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1430,11 +1444,11 @@ router.delete('/upcoming-events/:id', getFacultyId, async (req, res) => {
       _id: req.params.id,
       facultyId: req.facultyId,
     });
-    
+
     if (!record) {
       return res.status(404).json({ error: 'Record not found' });
     }
-    
+
     res.json({ message: 'Event deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -28,7 +28,7 @@ const AuditReports = () => {
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [departments, setDepartments] = useState<string[]>([]);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ const AuditReports = () => {
       const data = await auditAPI.getAuditStats({
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        department: selectedDepartment || undefined,
+        department: selectedDepartment === 'all' ? undefined : (selectedDepartment || undefined),
       });
       setStats(data || {
         faculty: { total: 0 },
@@ -77,7 +77,7 @@ const AuditReports = () => {
       const data = await auditAPI.getAuditData({
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        department: selectedDepartment || undefined,
+        department: selectedDepartment === 'all' ? undefined : (selectedDepartment || undefined),
       });
       setAuditData(data);
       toast({ title: 'Audit data loaded successfully' });
@@ -329,7 +329,7 @@ const AuditReports = () => {
                     <SelectValue placeholder="All Departments" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Departments</SelectItem>
+                    <SelectItem value="all">All Departments</SelectItem>
                     {departments.map((dept) => (
                       <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                     ))}
