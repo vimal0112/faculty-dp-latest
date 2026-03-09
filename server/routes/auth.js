@@ -14,17 +14,11 @@ const sendPasswordResetEmail = async (toEmail, resetUrl, userName) => {
       return;
     }
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: Number(process.env.SMTP_PORT) || 465,
-      secure: true, // must be true for port 465
+      service: "gmail",
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      connectionTimeout: 10000
+        pass: process.env.SMTP_PASS
+      }
     });
     await transporter.sendMail({
       from: process.env.SMTP_USER,
