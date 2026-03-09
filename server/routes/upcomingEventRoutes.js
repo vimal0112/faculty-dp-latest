@@ -42,11 +42,15 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// DELETE EVENT
-router.delete("/:id", async (req, res) => {
+// MARK NOTIFICATION SENT
+router.put("/:id/notification", async (req, res) => {
   try {
-    await UpcomingEvent.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted successfully" });
+    const updated = await UpcomingEvent.findByIdAndUpdate(
+      req.params.id,
+      { notificationSent: true },
+      { new: true }
+    );
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

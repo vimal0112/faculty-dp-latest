@@ -852,6 +852,13 @@ export const adminAPI = {
     return apiRequest<any[]>('/admin/joint-teaching');
   },
 
+  updateJointTeachingStatus: async (id: string, status: 'pending' | 'approved' | 'rejected') => {
+    return apiRequest<any>(`/admin/joint-teaching/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
   // Adjunct Faculty
   getAdjunctFaculty: async () => {
     return apiRequest<any[]>('/admin/adjunct');

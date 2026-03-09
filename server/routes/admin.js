@@ -238,6 +238,36 @@ router.get('/joint-teaching', checkAdmin, async (req, res) => {
   }
 });
 
+router.put('/joint-teaching/:id/status', checkAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    const record = await JointTeaching.findByIdAndUpdate(
+      req.params.id,
+      { status, updatedAt: Date.now() },
+      { new: true }
+    ).populate('facultyId', 'name email');
+
+    if (!record) {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+
+    // Create notification
+    await Notification.create({
+      recipientId: record.facultyId._id,
+      sender: 'Admin',
+      message: `Your Joint Teaching record for "${record.courseName}" has been ${status}`,
+      type: status === 'approved' ? 'success' : 'info',
+    });
+
+    res.json(record);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ========== Adjunct Faculty Management ==========
 router.get('/adjunct', checkAdmin, async (req, res) => {
   try {

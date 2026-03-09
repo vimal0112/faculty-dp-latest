@@ -45,7 +45,7 @@ const FacultyUpcomingEvents = () => {
           const eventStart = new Date(event.startDate);
           const timeUntilEvent = eventStart.getTime() - now.getTime();
           const hoursUntilEvent = timeUntilEvent / (1000 * 60 * 60);
-          
+
           // Send notification if event is within 24 hours
           if (hoursUntilEvent <= 24 && hoursUntilEvent > 0) {
             sendEventNotification(event);
@@ -66,14 +66,14 @@ const FacultyUpcomingEvents = () => {
         icon: '/favicon.ico'
       });
     }
-    
+
     // Show in-app notification
     toast({
       title: 'Event Reminder',
       description: `${event.eventName} is starting in less than 24 hours at ${event.venue}`,
       variant: 'default',
     });
-    
+
     // Mark notification as sent
     markNotificationSent(event.id);
   };
@@ -81,7 +81,7 @@ const FacultyUpcomingEvents = () => {
   const markNotificationSent = async (eventId: string) => {
     try {
       await facultyAPI.updateUpcomingEventNotification(eventId);
-      setRecords(prev => prev.map(event => 
+      setRecords(prev => prev.map(event =>
         event.id === eventId ? { ...event, notificationSent: true } : event
       ));
     } catch (error) {
@@ -91,12 +91,12 @@ const FacultyUpcomingEvents = () => {
 
   const calculateDuration = (start: string, end: string) => {
     if (!start || !end) return '';
-    
+
     const startDate = new Date(start);
     const endDate = new Date(end);
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays > 6) {
       const weeks = Math.round(diffDays / 7);
       return `${weeks} week${weeks > 1 ? 's' : ''}`;
@@ -160,14 +160,14 @@ const FacultyUpcomingEvents = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!user?.id) {
       toast({ title: 'Authentication required', description: 'Please log in to add events', variant: 'destructive' });
       return;
     }
-    
+
     const formData = new FormData(e.currentTarget);
-    
+
     const eventData: any = {
       eventName: formData.get('eventName') as string,
       venue: formData.get('venue') as string,
@@ -202,7 +202,7 @@ const FacultyUpcomingEvents = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
-    
+
     try {
       await facultyAPI.deleteUpcomingEvent(id);
       toast({ title: 'Event deleted successfully', variant: 'destructive' });
@@ -238,18 +238,15 @@ const FacultyUpcomingEvents = () => {
           <h1 className="text-3xl font-bold text-foreground">Upcoming Events</h1>
           <p className="text-muted-foreground">Manage your academic events and activities</p>
         </div>
-        <Button onClick={() => setEditingRecord(null)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add events
-        </Button>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => setEditingRecord(null)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Event
+              Add events
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+
             <DialogHeader>
               <DialogTitle>{editingRecord ? 'Edit' : 'Add New'} Event</DialogTitle>
               <DialogDescription>Schedule your academic events and activities</DialogDescription>
@@ -267,12 +264,11 @@ const FacultyUpcomingEvents = () => {
               </div>
 
               <div>
-                <Label htmlFor="venue">Venue *</Label>
+                <Label htmlFor="venue">Venue (Optional)</Label>
                 <Input
                   id="venue"
                   name="venue"
                   defaultValue={editingRecord?.venue}
-                  required
                   placeholder="Enter venue location"
                 />
               </div>
@@ -314,17 +310,13 @@ const FacultyUpcomingEvents = () => {
                 </div>
                 <div>
                   <Label htmlFor="calculatedDuration">Calculated Duration</Label>
-                  <Input
-                    id="calculatedDuration"
-                    name="calculatedDuration"
-                    type="text"
-                    value={calculatedDuration || ''}
-                    readOnly
-                    placeholder="Auto-calculated from dates"
-                    className="bg-muted"
-                  />
+                  <div className="h-10 px-3 py-2 rounded-md border border-input bg-blue-50 text-blue-700 font-semibold flex items-center justify-center text-sm">
+                    {calculatedDuration || "---"}
+                  </div>
+                  <input type="hidden" name="calculatedDuration" value={calculatedDuration} />
                 </div>
               </div>
+
 
               <div>
                 <Label htmlFor="description">Description (Optional)</Label>

@@ -131,6 +131,7 @@ const AdminJointTeaching = () => {
                   <TableHead>Course Code</TableHead>
                   <TableHead>Faculty Involved</TableHead>
                   <TableHead>Hours</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -159,7 +160,15 @@ const AdminJointTeaching = () => {
                       </TableCell>
                       <TableCell>{record.facultyInvolved}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{record.hours} hrs</Badge>
+                        <Badge
+                          variant={
+                            record.status === 'approved' ? 'default' :
+                              record.status === 'rejected' ? 'destructive' :
+                                'secondary'
+                          }
+                        >
+                          {record.status || 'pending'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -173,6 +182,39 @@ const AdminJointTeaching = () => {
                           >
                             View
                           </Button>
+                          {record.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={async () => {
+                                  try {
+                                    await adminAPI.updateJointTeachingStatus(record._id || record.id, 'approved');
+                                    loadRecords();
+                                  } catch (error) {
+                                    console.error('Failed to approve:', error);
+                                  }
+                                }}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={async () => {
+                                  try {
+                                    await adminAPI.updateJointTeachingStatus(record._id || record.id, 'rejected');
+                                    loadRecords();
+                                  } catch (error) {
+                                    console.error('Failed to reject:', error);
+                                  }
+                                }}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
