@@ -26,7 +26,6 @@ const FacultyInternships = () => {
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [stipendAmount, setStipendAmount] = useState([0]);
-  const [selectedRating, setSelectedRating] = useState(0);
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   useEffect(() => {
@@ -40,7 +39,7 @@ const FacultyInternships = () => {
       setRecords(data.map((item: any) => ({
         id: item._id || item.id,
         facultyId: item.facultyId?._id || item.facultyId || user?.id || '',
-        studentName: item.studentName,
+        facultyMemberName: item.studentName,
         regNo: item.regNo,
         companyName: item.companyName,
         companyAddress: item.companyAddress,
@@ -54,8 +53,6 @@ const FacultyInternships = () => {
         skillsGained: item.skillsGained || [],
         projectTitle: item.projectTitle,
         status: item.status || 'ongoing',
-        feedback: item.feedback,
-        feedbackRating: item.feedbackRating,
         certificate: item.certificate,
         report: item.report,
       })));
@@ -69,12 +66,12 @@ const FacultyInternships = () => {
 
   const calculateDuration = (start: string, end: string) => {
     if (!start || !end) return '';
-    
+
     const startDate = new Date(start);
     const endDate = new Date(end);
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays > 6) {
       const weeks = Math.round(diffDays / 7);
       return `${weeks} week${weeks > 1 ? 's' : ''}`;
@@ -132,65 +129,30 @@ const FacultyInternships = () => {
     }
   };
 
-  const StarRating = ({ rating, onRatingChange }: { rating: number; onRatingChange: (rating: number) => void }) => {
-    const labels = ['', 'Poor', 'Need to improve', 'Average', 'Very good', 'Excellent'];
-    
-    return (
-      <div className="space-y-2">
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => onRatingChange(star)}
-              className="p-1 hover:scale-110 transition-transform"
-            >
-              <Star
-                className={`h-6 w-6 cursor-pointer transition-colors ${
-                  star <= rating
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'text-gray-300 hover:text-yellow-200'
-                }`}
-              />
-            </button>
-          ))}
-        </div>
-        {rating > 0 && (
-          <p className="text-sm text-muted-foreground">{labels[rating]}</p>
-        )}
-      </div>
-    );
-  };
-
-  const getRatingLabel = (rating: number): string => {
-    const labels = ['', 'Poor', 'Need to improve', 'Average', 'Very good', 'Excellent'];
-    return labels[rating] || '';
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Check if user is authenticated
     if (!user?.id) {
       toast({ title: 'Authentication required', description: 'Please log in to add internship records', variant: 'destructive' });
       return;
     }
-    
+
     const formData = new FormData(e.currentTarget);
     const certificateFile = formData.get('certificate') as File;
     const reportFile = formData.get('report') as File;
-    
+
     // Validate mandatory fields
     if (!certificateFile && !editingRecord) {
       toast({ title: 'Certificate required', description: 'Please upload a certificate file', variant: 'destructive' });
       return;
     }
-    
-    if (!reportFile && !editingRecord) {
-      toast({ title: 'Report required', description: 'Please upload an internship report', variant: 'destructive' });
+
+    if (!certificateFile && !editingRecord) {
+      toast({ title: 'Certificate required', description: 'Please upload a certificate file', variant: 'destructive' });
       return;
     }
-    
+
     // Validate file formats
     if (certificateFile && certificateFile.size > 0) {
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
@@ -199,7 +161,7 @@ const FacultyInternships = () => {
         return;
       }
     }
-    
+
     if (reportFile && reportFile.size > 0) {
       const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (!validateFileFormat(reportFile, allowedTypes)) {
@@ -207,10 +169,10 @@ const FacultyInternships = () => {
         return;
       }
     }
-    
+
     const internshipData: any = {
+      studentName: formData.get('studentName') as string, // Faculty Name label in UI
       regNo: formData.get('regNo') as string,
-      studentName: formData.get('studentName') as string,
       companyName: formData.get('companyName') as string,
       companyAddress: formData.get('companyAddress') as string,
       mode: formData.get('mode') as string || 'offline',
@@ -222,8 +184,7 @@ const FacultyInternships = () => {
       description: formData.get('description') as string,
       skillsGained: (formData.get('skillsGained') as string)?.split(',').map(s => s.trim()).filter(Boolean),
       projectTitle: formData.get('projectTitle') as string,
-      status: formData.get('status') as string || 'pending',
-      feedbackRating: selectedRating || undefined,
+      status: formData.get('status') as string || 'completed',
     };
 
     if (certificateFile && certificateFile.size > 0) {
@@ -250,7 +211,6 @@ const FacultyInternships = () => {
       setCertificateFile(null);
       setReportFile(null);
       setStipendAmount([0]);
-      setSelectedRating(0);
     } catch (error: any) {
       console.error('Failed to save internship:', error);
       toast({ title: error.message || 'Failed to save internship', variant: 'destructive' });
@@ -259,7 +219,7 @@ const FacultyInternships = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this internship record?')) return;
-    
+
     try {
       await facultyAPI.deleteInternship(id);
       toast({ title: 'Internship deleted successfully', variant: 'destructive' });
@@ -272,14 +232,13 @@ const FacultyInternships = () => {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
-      pending: { variant: 'secondary', label: 'Pending' },
       approved: { variant: 'default', label: 'Approved' },
       rejected: { variant: 'destructive', label: 'Rejected' },
       ongoing: { variant: 'default', label: 'Ongoing' },
       completed: { variant: 'default', label: 'Completed' },
     };
-    const config = variants[status] || variants.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = variants[status] || { variant: 'secondary', label: status || 'Pending' };
+    return <Badge variant={config.variant as any}>{config.label}</Badge>;
   };
 
   return (
@@ -304,13 +263,13 @@ const FacultyInternships = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="studentName">Student Name *</Label>
+                  <Label htmlFor="studentName">Faculty Name *</Label>
                   <Input
                     id="studentName"
                     name="studentName"
-                    defaultValue={editingRecord?.studentName}
+                    defaultValue={editingRecord?.facultyMemberName}
                     required
-                    placeholder="Enter student name"
+                    placeholder="Enter faculty name"
                   />
                 </div>
                 <div>
@@ -420,12 +379,11 @@ const FacultyInternships = () => {
                 </div>
                 <div>
                   <Label htmlFor="status">Status *</Label>
-                  <Select name="status" defaultValue={editingRecord?.status || 'pending'} required>
+                  <Select name="status" defaultValue={editingRecord?.status || 'completed'} required>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="ongoing">Ongoing</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                     </SelectContent>
@@ -464,14 +422,6 @@ const FacultyInternships = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="feedbackRating">Feedback Rating (5 Stars)</Label>
-                <StarRating 
-                  rating={selectedRating} 
-                  onRatingChange={setSelectedRating} 
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="certificate">Certificate * (PDF, JPG, PNG, DOCX - Max 10MB)</Label>
@@ -494,7 +444,7 @@ const FacultyInternships = () => {
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="report">Internship Report * (PDF, DOCX - Max 10MB)</Label>
+                  <Label htmlFor="report">Internship Report (PDF, DOCX - Max 10MB)</Label>
                   <Input
                     id="report"
                     name="report"
@@ -502,10 +452,9 @@ const FacultyInternships = () => {
                     accept=".pdf,.docx"
                     className="cursor-pointer"
                     onChange={handleReportChange}
-                    required={!editingRecord}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Report is mandatory
+                    Optional internship report
                   </p>
                   {editingRecord?.report && (
                     <p className="text-xs text-muted-foreground mt-1">
@@ -536,7 +485,7 @@ const FacultyInternships = () => {
                   <div className="flex-1">
                     <CardTitle className="flex items-center gap-2">
                       <Briefcase className="h-5 w-5 text-primary" />
-                      {internship.studentName}
+                      {internship.facultyMemberName}
                     </CardTitle>
                     <CardDescription>
                       {internship.regNo} • {internship.companyName} • {internship.mode}
@@ -572,25 +521,6 @@ const FacultyInternships = () => {
                     <div className="text-sm">
                       <span className="text-muted-foreground">Stipend: </span>
                       <span className="font-medium">₹{internship.stipend.toLocaleString()}</span>
-                    </div>
-                  )}
-
-                  {internship.feedbackRating && (
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Rating: </span>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`h-4 w-4 ${
-                              star <= internship.feedbackRating
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                        <span className="ml-1 font-medium">({getRatingLabel(internship.feedbackRating)})</span>
-                      </div>
                     </div>
                   )}
 
@@ -644,7 +574,6 @@ const FacultyInternships = () => {
                         setEndDate(internship.endDate);
                         setCalculatedDuration(`${internship.duration} ${internship.durationUnit}`);
                         setStipendAmount([internship.stipend || 0]);
-                        setSelectedRating(internship.feedbackRating || 0);
                         setIsDialogOpen(true);
                       }}
                     >

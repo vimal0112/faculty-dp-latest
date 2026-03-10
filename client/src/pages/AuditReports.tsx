@@ -128,7 +128,8 @@ const AuditReports = () => {
       // Faculty Sheet
       if (auditData.data.faculty.length > 0) {
         const facultySheet = XLSX.utils.json_to_sheet(
-          auditData.data.faculty.map((f: any) => ({
+          auditData.data.faculty.map((f: any, index: number) => ({
+            'S.No': index + 1,
             'Name': f.name,
             'Email': f.email,
             'Department': f.department,
@@ -141,7 +142,8 @@ const AuditReports = () => {
       // FDP Attended Sheet
       if (auditData.data.fdpAttended.length > 0) {
         const fdpSheet = XLSX.utils.json_to_sheet(
-          auditData.data.fdpAttended.map((f: any) => ({
+          auditData.data.fdpAttended.map((f: any, index: number) => ({
+            'S.No': index + 1,
             'Faculty': f.facultyId?.name || 'N/A',
             'Title': f.title,
             'Mode': f.mode,
@@ -156,7 +158,8 @@ const AuditReports = () => {
       // Reimbursements Sheet
       if (auditData.data.reimbursements.length > 0) {
         const reimbSheet = XLSX.utils.json_to_sheet(
-          auditData.data.reimbursements.map((r: any) => ({
+          auditData.data.reimbursements.map((r: any, index: number) => ({
+            'S.No': index + 1,
             'Faculty': r.facultyId?.name || 'N/A',
             'FDP Title': r.fdpTitle,
             'Amount': r.amount,
@@ -170,7 +173,8 @@ const AuditReports = () => {
       // Achievements Sheet
       if (auditData.data.achievements.length > 0) {
         const achSheet = XLSX.utils.json_to_sheet(
-          auditData.data.achievements.map((a: any) => ({
+          auditData.data.achievements.map((a: any, index: number) => ({
+            'S.No': index + 1,
             'Faculty': a.facultyId?.name || 'N/A',
             'Title': a.title,
             'Category': a.category,
@@ -185,7 +189,8 @@ const AuditReports = () => {
       // Internships Sheet
       if (auditData.data.internships.length > 0) {
         const intSheet = XLSX.utils.json_to_sheet(
-          auditData.data.internships.map((i: any) => ({
+          auditData.data.internships.map((i: any, index: number) => ({
+            'S.No': index + 1,
             'Faculty': i.facultyId?.name || 'N/A',
             'Student': i.studentName,
             'Company': i.companyName,
@@ -262,8 +267,9 @@ const AuditReports = () => {
 
         autoTable(doc, {
           startY: 30,
-          head: [['Faculty', 'FDP Title', 'Amount', 'Type', 'Status']],
-          body: auditData.data.reimbursements.map((r: any) => [
+          head: [['S.No', 'Faculty', 'FDP Title', 'Amount', 'Type', 'Status']],
+          body: auditData.data.reimbursements.map((r: any, index: number) => [
+            index + 1,
             r.facultyId?.name || 'N/A',
             r.fdpTitle,
             `${r.currency || 'INR'} ${r.amount}`,

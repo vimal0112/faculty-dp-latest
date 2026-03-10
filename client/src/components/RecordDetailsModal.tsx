@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, ExternalLink } from 'lucide-react';
 
-export type RecordType = 'fdp-attended' | 'fdp-organized' | 'seminar' | 'joint-teaching' | 'abl' | 'adjunct-faculty';
+export type RecordType = 'fdp-attended' | 'fdp-organized' | 'seminar' | 'joint-teaching' | 'abl' | 'adjunct-faculty' | 'internship';
 
 interface RecordDetailsModalProps {
     isOpen: boolean;
@@ -60,14 +60,12 @@ export function RecordDetailsModal({
     const getDocUrl = (path: string) => {
         if (!path) return '';
         if (path.startsWith('http')) return path;
-        // Remove /api if present in base URL to avoid double api/uploads if needed, 
-        // but usually uploads are at root.
-        // Based on server/index.js: app.use('/uploads', express.static('uploads'));
-        // So http://localhost:3001/uploads/...
-        // API_BASE_URL in api.ts is http://localhost:3001/api by default
-        // We need the root URL.
-        const baseUrl = API_BASE_URL.replace('/api', '');
-        return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+
+        // Ensure baseUrl doesn't end with / and path starts with /
+        const baseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
+        const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+        return `${baseUrl}${cleanPath}`;
     };
 
     const renderDocument = (path: string, label: string = 'Certificate') => {
@@ -187,6 +185,24 @@ export function RecordDetailsModal({
                             {renderStatus(record.status)}
                         </div>
                         <div className="border-t pt-4">
+                            {renderDocument(record.certificate, 'Certificate')}
+                        </div>
+                    </>
+                );
+            case 'internship':
+                return (
+                    <>
+                        <div className="grid grid-cols-2 gap-4">
+                            {renderField('Faculty Member Name', record.facultyMemberName || record.studentName)}
+                            {renderField('Company Name', record.companyName)}
+                            {renderField('Registration Number', record.regNo)}
+                            {renderField('Position', record.position)}
+                            {renderField('Mode', record.mode)}
+                            {renderField('Duration', record.duration ? `${record.duration} ${record.durationUnit || 'weeks'}` : '')}
+                            {renderStatus(record.status)}
+                        </div>
+                        <div className="border-t pt-4">
+                            {renderDocument(record.internshipReport, 'Internship Report')}
                             {renderDocument(record.certificate, 'Certificate')}
                         </div>
                     </>

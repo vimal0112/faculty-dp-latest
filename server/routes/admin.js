@@ -56,6 +56,18 @@ router.get('/faculty/:id', checkAdmin, async (req, res) => {
   }
 });
 
+// ========== User Management / Recipients ==========
+router.get('/recipients', checkAdmin, async (req, res) => {
+  try {
+    const recipients = await User.find({ role: { $in: ['faculty', 'hod'] } })
+      .select('name email role department')
+      .sort({ name: 1 });
+    res.json(recipients);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ========== FDP Attended Management ==========
 router.get('/fdp/attended', checkAdmin, async (req, res) => {
   try {
@@ -671,7 +683,7 @@ router.put('/internships/:id/status', checkAdmin, async (req, res) => {
       userId: record.facultyId._id,
       type: 'internship',
       title: `Internship ${status}`,
-      message: `Your internship record for ${record.studentName} has been ${status}`,
+      message: `Your internship record for ${record.studentName} has been ${status}`, // Note: record.studentName now holds Faculty Name
       relatedId: record._id,
       relatedModel: 'Internship'
     });

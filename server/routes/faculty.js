@@ -1206,10 +1206,6 @@ router.post('/internships', getFacultyId, upload.fields([
       return res.status(400).json({ error: 'Certificate is mandatory. Please upload a certificate file.' });
     }
 
-    if (!req.files?.report) {
-      return res.status(400).json({ error: 'Internship report is mandatory. Please upload a report file.' });
-    }
-
     const recordData = {
       ...req.body,
       facultyId: req.facultyId,

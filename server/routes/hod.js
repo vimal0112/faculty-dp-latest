@@ -126,9 +126,9 @@ router.get('/analytics', checkHOD, async (req, res) => {
       JointTeaching.countDocuments({ facultyId: { $in: facultyIds } }),
       AdjunctFaculty.countDocuments({ facultyId: { $in: facultyIds } }),
       FDPAttended.countDocuments({ facultyId: { $in: facultyIds }, status: 'pending' }) +
-        FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'pending' }),
+      FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'pending' }),
       FDPAttended.countDocuments({ facultyId: { $in: facultyIds }, status: 'approved' }) +
-        FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'approved' }),
+      FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'approved' }),
     ]);
 
     // Get FDPs by month for the last 12 months
@@ -147,28 +147,34 @@ router.get('/analytics', checkHOD, async (req, res) => {
       { $limit: 12 },
     ]);
 
-    // Get top performing faculty
-    const topFaculty = await FDPAttended.aggregate([
-      { $match: { facultyId: { $in: facultyIds } } },
-      {
-        $group: {
-          _id: '$facultyId',
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'faculty',
-        },
-      },
-      { $unwind: '$faculty' },
-      { $project: { 'faculty.password': 0 } },
+    // Get top performing faculty (Combined FDP Attended and Organized)
+    const [topAttended, topOrganized] = await Promise.all([
+      FDPAttended.aggregate([
+        { $match: { facultyId: { $in: facultyIds } } },
+        { $group: { _id: '$facultyId', count: { $sum: 1 } } }
+      ]),
+      FDPOrganized.aggregate([
+        { $match: { facultyId: { $in: facultyIds } } },
+        { $group: { _id: '$facultyId', count: { $sum: 1 } } }
+      ])
     ]);
+
+    const facultyStats = new Map();
+    topAttended.forEach(f => facultyStats.set(f._id.toString(), (facultyStats.get(f._id.toString()) || 0) + f.count));
+    topOrganized.forEach(f => facultyStats.set(f._id.toString(), (facultyStats.get(f._id.toString()) || 0) + f.count));
+
+    const sortedFacultyIds = Array.from(facultyStats.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const topFaculty = await Promise.all(sortedFacultyIds.map(async ([id, count]) => {
+      const faculty = await User.findById(id).select('-password');
+      return {
+        _id: id,
+        count,
+        faculty: [faculty] // Keeping the structure expected by frontend
+      };
+    }));
 
     res.json({
       overview: {
@@ -193,7 +199,13 @@ router.get('/analytics', checkHOD, async (req, res) => {
 // ========== Notifications ==========
 router.get('/notifications', checkHOD, async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipientId: req.headers['user-id'] })
+    const notifications = await Notification.find({
+      $or: [
+        { recipientId: req.headers['user-id'] },
+        { sender: 'Admin' }
+      ]
+    })
+      .populate('recipientId', 'name role')
       .sort({ timestamp: -1 })
       .limit(50);
     res.json(notifications);
@@ -202,10 +214,18 @@ router.get('/notifications', checkHOD, async (req, res) => {
   }
 });
 
+// Mark as read
 router.put('/notifications/:id/read', checkHOD, async (req, res) => {
   try {
+    const userId = req.headers['user-id'];
     const notification = await Notification.findOneAndUpdate(
-      { _id: req.params.id, recipientId: req.headers['user-id'] },
+      {
+        _id: req.params.id,
+        $or: [
+          { recipientId: userId },
+          { sender: 'Admin' }
+        ]
+      },
       { read: true },
       { new: true }
     );
@@ -213,6 +233,26 @@ router.put('/notifications/:id/read', checkHOD, async (req, res) => {
       return res.status(404).json({ error: 'Notification not found' });
     }
     res.json(notification);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark all as read
+router.put('/notifications/read-all', checkHOD, async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    await Notification.updateMany(
+      {
+        read: false,
+        $or: [
+          { recipientId: userId },
+          { sender: 'Admin' }
+        ]
+      },
+      { read: true }
+    );
+    res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -236,9 +276,9 @@ router.get('/dashboard', checkHOD, async (req, res) => {
     ] = await Promise.all([
       User.countDocuments({ role: 'faculty', department: req.hodDepartment }),
       FDPAttended.countDocuments({ facultyId: { $in: facultyIds }, status: 'pending' }) +
-        FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'pending' }),
+      FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'pending' }),
       FDPAttended.countDocuments({ facultyId: { $in: facultyIds }, status: 'approved' }) +
-        FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'approved' }),
+      FDPOrganized.countDocuments({ facultyId: { $in: facultyIds }, status: 'approved' }),
       Seminar.countDocuments({ facultyId: { $in: facultyIds } }),
     ]);
 

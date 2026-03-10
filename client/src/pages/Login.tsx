@@ -63,7 +63,7 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'admin' | 'faculty' | 'hod' | ''>('');
+  const [role, setRole] = useState<'admin' | 'faculty' | 'hod' | ''>('faculty');
   const [isSignup, setIsSignup] = useState(false);
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');

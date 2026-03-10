@@ -41,7 +41,8 @@ const AdminFaculty = () => {
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      facultyProfiles.map(faculty => ({
+      facultyProfiles.map((faculty, index) => ({
+        'S.No': index + 1,
         'Faculty ID': faculty.id,
         'Name': faculty.name,
         'Email': faculty.email,
@@ -69,8 +70,9 @@ const AdminFaculty = () => {
 
     autoTable(doc, {
       startY: 35,
-      head: [['ID', 'Name', 'Department', 'Designation', 'FDPs', 'Seminars', 'Workshops']],
-      body: facultyProfiles.map(faculty => [
+      head: [['S.No', 'ID', 'Name', 'Department', 'Designation', 'FDPs', 'Seminars', 'Workshops']],
+      body: facultyProfiles.map((faculty, index) => [
+        index + 1,
         faculty.id,
         faculty.name,
         faculty.department,

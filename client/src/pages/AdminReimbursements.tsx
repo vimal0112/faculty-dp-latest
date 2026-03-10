@@ -63,7 +63,8 @@ const AdminReimbursements = () => {
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      records.map((record: any) => ({
+      records.map((record: any, index: number) => ({
+        'S.No': index + 1,
         'Faculty Name': record.facultyId?.name || 'N/A',
         'FDP Title': record.fdpTitle,
         'Amount': record.amount,
@@ -90,8 +91,9 @@ const AdminReimbursements = () => {
 
     autoTable(doc, {
       startY: 35,
-      head: [['Faculty', 'FDP Title', 'Amount', 'Type', 'Status', 'Date']],
-      body: records.map((record: any) => [
+      head: [['S.No', 'Faculty', 'FDP Title', 'Amount', 'Type', 'Status', 'Date']],
+      body: records.map((record: any, index: number) => [
+        index + 1,
         record.facultyId?.name || 'N/A',
         record.fdpTitle,
         `${record.currency || 'INR'} ${record.amount}`,

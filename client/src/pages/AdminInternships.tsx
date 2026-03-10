@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Search, Briefcase, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { FileSpreadsheet, FileText, Search, CheckCircle, XCircle, Eye, Clock, Briefcase } from 'lucide-react';
+import { RecordDetailsModal } from '@/components/RecordDetailsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,8 @@ const AdminInternships = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,32 +47,33 @@ const AdminInternships = () => {
   const handleStatusUpdate = async (id: string, status: 'approved' | 'rejected') => {
     try {
       await adminAPI.updateInternshipStatus(id, status);
-      toast({ 
-        title: 'Status updated', 
-        description: `Internship ${status} successfully` 
+      toast({
+        title: 'Status updated',
+        description: `Internship ${status} successfully`
       });
       await loadRecords();
     } catch (error: any) {
       console.error('Failed to update status:', error);
-      toast({ 
-        title: 'Failed to update status', 
+      toast({
+        title: 'Failed to update status',
         description: error.message || 'Something went wrong',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
     }
   };
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      records.map((record: any) => ({
-        'Faculty': record.facultyId?.name || 'N/A',
-        'Student Name': record.studentName,
-        'Roll No': record.studentRollNo || 'N/A',
+      records.map((record: any, index: number) => ({
+        'S.No': index + 1,
+        'Faculty Supervisor': record.facultyId?.name || 'N/A',
+        'Faculty Name': record.studentName,
+        'Registration No': record.regNo || 'N/A',
         'Company': record.companyName,
         'Position': record.position,
         'Start Date': record.startDate ? new Date(record.startDate).toLocaleDateString() : 'N/A',
         'End Date': record.endDate ? new Date(record.endDate).toLocaleDateString() : 'N/A',
-        'Duration (weeks)': record.duration || 'N/A',
+        'Duration': record.duration ? `${record.duration} ${record.durationUnit || 'weeks'}` : 'N/A',
         'Stipend': record.stipend || 'N/A',
         'Status': record.status,
       }))
@@ -81,22 +85,23 @@ const AdminInternships = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    
+
     doc.setFontSize(18);
     doc.text('Internship Records', 14, 20);
-    
+
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
 
     autoTable(doc, {
       startY: 35,
-      head: [['Faculty', 'Student', 'Company', 'Position', 'Duration', 'Status']],
-      body: records.map((record: any) => [
+      head: [['S.No', 'Supervisor', 'Faculty Name', 'Company', 'Position', 'Duration', 'Status']],
+      body: records.map((record: any, index: number) => [
+        index + 1,
         record.facultyId?.name || 'N/A',
         record.studentName,
         record.companyName,
         record.position,
-        record.duration ? `${record.duration} weeks` : 'N/A',
+        record.duration ? `${record.duration} ${record.durationUnit || 'weeks'}` : 'N/A',
         record.status,
       ]),
       theme: 'grid',
@@ -129,7 +134,7 @@ const AdminInternships = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Internship Activities</h1>
-          <p className="text-muted-foreground">View all student internship records</p>
+          <p className="text-muted-foreground">View all faculty internship records</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={downloadExcel}>
@@ -146,12 +151,12 @@ const AdminInternships = () => {
       <Card>
         <CardHeader>
           <CardTitle>Internship Records</CardTitle>
-          <CardDescription>All student internship activities supervised by faculty</CardDescription>
+          <CardDescription>All internship activities undertaken by faculty</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
             <Input
-              placeholder="Search by faculty, student, or company name..."
+              placeholder="Search by faculty, company, or registration number..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
@@ -167,8 +172,8 @@ const AdminInternships = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Faculty</TableHead>
-                    <TableHead>Student</TableHead>
+                    <TableHead>Supervisor</TableHead>
+                    <TableHead>Faculty Name</TableHead>
                     <TableHead>Company</TableHead>
                     <TableHead>Mode</TableHead>
                     <TableHead>Duration</TableHead>
@@ -197,8 +202,19 @@ const AdminInternships = () => {
                       <TableCell>{record.duration ? `${record.duration} ${record.durationUnit || 'weeks'}` : 'N/A'}</TableCell>
                       <TableCell>{getStatusBadge(record.status)}</TableCell>
                       <TableCell>
-                        {record.status === 'pending' && (
+                        {(record.status === 'pending' || record.status === 'completed') && (
                           <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedRecord(record);
+                                setIsViewModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -219,8 +235,21 @@ const AdminInternships = () => {
                             </Button>
                           </div>
                         )}
-                        {record.status !== 'pending' && (
-                          <span className="text-sm text-muted-foreground">Processed</span>
+                        {(record.status !== 'pending' && record.status !== 'completed') && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedRecord(record);
+                                setIsViewModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <span className="text-sm text-muted-foreground flex items-center">Processed</span>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -231,6 +260,13 @@ const AdminInternships = () => {
           )}
         </CardContent>
       </Card>
+
+      <RecordDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        record={selectedRecord}
+        type="internship"
+      />
     </div>
   );
 };

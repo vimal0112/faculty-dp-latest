@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -240,96 +241,124 @@ const FacultyUpcomingEvents = () => {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingRecord(null)}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={() => setEditingRecord(null)} className="shadow-lg hover:shadow-xl transition-all duration-300">
+              <Plus className="mr-2 h-5 w-5" />
               Add events
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border-t-4 border-t-primary">
             <DialogHeader>
-              <DialogTitle>{editingRecord ? 'Edit' : 'Add New'} Event</DialogTitle>
-              <DialogDescription>Schedule your academic events and activities</DialogDescription>
+              <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+                <Calendar className="h-6 w-6" />
+                {editingRecord ? 'Edit' : 'Add New'} Event
+              </DialogTitle>
+              <DialogDescription>Schedule your upcoming academic events and activities</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="eventName">Event Name *</Label>
+            <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+              <div className="grid gap-2">
+                <Label htmlFor="eventName" className="text-sm font-semibold">Event Name *</Label>
                 <Input
                   id="eventName"
                   name="eventName"
                   defaultValue={editingRecord?.eventName}
                   required
-                  placeholder="Enter event name"
+                  placeholder="e.g., International Research Symposium 2026"
+                  className="rounded-lg border-primary/20 focus:border-primary"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="venue">Venue (Optional)</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="venue" className="text-sm font-semibold">Venue (Optional)</Label>
                 <Input
                   id="venue"
                   name="venue"
                   defaultValue={editingRecord?.venue}
-                  placeholder="Enter venue location"
+                  placeholder="e.g., Main Auditorium, Block A"
+                  className="rounded-lg border-primary/20 focus:border-primary"
                 />
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="startDate">Start Date *</Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={startDate || editingRecord?.startDate || ''}
-                    onChange={(e) => handleStartDateChange(e.target.value)}
-                    required
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-xl border border-dashed border-primary/30">
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="startDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground italic">Start Date *</Label>
+                    <Input
+                      id="startDate"
+                      name="startDate"
+                      type="date"
+                      value={startDate || editingRecord?.startDate || ''}
+                      onChange={(e) => handleStartDateChange(e.target.value)}
+                      required
+                      className="rounded-lg"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="endDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground italic">End Date *</Label>
+                    <Input
+                      id="endDate"
+                      name="endDate"
+                      type="date"
+                      value={endDate || editingRecord?.endDate || ''}
+                      onChange={(e) => handleEndDateChange(e.target.value)}
+                      required
+                      className="rounded-lg"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="endDate">End Date *</Label>
-                  <Input
-                    id="endDate"
-                    name="endDate"
-                    type="date"
-                    value={endDate || editingRecord?.endDate || ''}
-                    onChange={(e) => handleEndDateChange(e.target.value)}
-                    required
-                  />
+
+                <div className="flex flex-col justify-center items-center space-y-3 bg-white/50 p-4 rounded-lg border border-primary/10 shadow-sm">
+                  <Label className="text-sm font-bold text-primary">Calculated Duration</Label>
+                  <div className="w-full flex flex-col items-center justify-center gap-1">
+                    <div className="text-3xl font-black text-primary animate-pulse-subtle">
+                      {calculatedDuration || "---"}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Auto-calculated from dates</p>
+                  </div>
+                  <input type="hidden" name="calculatedDuration" value={calculatedDuration} />
                 </div>
-                <div>
-                  <Label htmlFor="duration">Duration (Optional)</Label>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="duration" className="text-sm font-semibold flex items-center justify-between">
+                  Manual Duration Override
+                  <span className="text-[10px] font-normal bg-muted px-2 py-0.5 rounded text-muted-foreground uppercase">Optional</span>
+                </Label>
+                <div className="flex gap-2">
                   <Input
                     id="duration"
                     name="duration"
                     type="number"
                     value={duration || editingRecord?.duration || ''}
                     onChange={(e) => handleDurationChange(e.target.value)}
-                    placeholder="Enter duration"
+                    placeholder="Enter number"
                     min="0"
+                    className="flex-1 rounded-lg border-primary/20"
                   />
-                </div>
-                <div>
-                  <Label htmlFor="calculatedDuration">Calculated Duration</Label>
-                  <div className="h-10 px-3 py-2 rounded-md border border-input bg-blue-50 text-blue-700 font-semibold flex items-center justify-center text-sm">
-                    {calculatedDuration || "---"}
-                  </div>
-                  <input type="hidden" name="calculatedDuration" value={calculatedDuration} />
+                  <Select value={durationUnit || editingRecord?.durationUnit || 'days'} onValueChange={setDurationUnit}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="days">Days</SelectItem>
+                      <SelectItem value="weeks">Weeks</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-
-              <div>
-                <Label htmlFor="description">Description (Optional)</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="description" className="text-sm font-semibold italic">Description (Optional)</Label>
                 <Textarea
                   id="description"
                   name="description"
                   defaultValue={editingRecord?.description}
                   rows={3}
-                  placeholder="Describe the event..."
+                  placeholder="Provide brief details about the event..."
+                  className="rounded-lg resize-none border-primary/20 focus:border-primary"
                 />
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full h-12 text-lg font-bold shadow-md hover:shadow-lg transition-all rounded-xl">
                 {editingRecord ? 'Update Event' : 'Save Events'}
               </Button>
             </form>
@@ -338,62 +367,110 @@ const FacultyUpcomingEvents = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-8">Loading...</div>
+        <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-muted-foreground font-medium">Loading your academic schedule...</p>
+        </div>
       ) : records.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">No upcoming events found</div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="flex flex-col items-center justify-center p-12 text-center bg-muted/20 border-2 border-dashed border-muted transition-all hover:bg-muted/30 col-span-full min-h-[400px]">
+            <div className="bg-primary/10 p-6 rounded-full mb-6">
+              <Calendar className="h-16 w-16 text-primary opacity-50" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-2">No Scheduled Events</h3>
+            <p className="text-muted-foreground max-w-md mb-8">
+              Your academic calendar is currently empty. Start by adding your upcoming symposia, workshops, or research activities.
+            </p>
+            <Button onClick={() => setIsDialogOpen(true)} size="lg" className="rounded-full px-8 gap-2">
+              <Plus className="h-5 w-5" />
+              Schedule Your First Event
+            </Button>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Automatic Reminders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Stay on top of your schedule! We'll automatically notify you 24 hours before any event begins via browser alerts and in-portal messages.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-primary" />
+                Quick Duration Calc
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Just enter your dates and we'll calculate the duration for you. Events longer than 6 days are automatically formatted in weeks for better readability.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {records.map((event) => (
-            <Card key={event.id} className={isEventSoon(event.startDate) ? 'border-orange-200 bg-orange-50/50' : ''}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
+            <Card
+              key={event.id}
+              className={`group flex flex-col transition-all duration-300 hover:shadow-xl hover:translate-y-[-4px] overflow-hidden border-t-4 ${isEventSoon(event.startDate) ? 'border-t-orange-500 bg-orange-50/30' : 'border-t-primary'
+                }`}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between min-h-[60px]">
+                  <div className="flex-1 pr-2">
+                    <CardTitle className="text-xl font-bold line-clamp-2 group-hover:text-primary transition-colors">
                       {event.eventName}
-                      {isEventSoon(event.startDate) && (
-                        <AlertTriangle className="h-4 w-4 text-orange-500" />
-                      )}
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      {event.venue}
-                    </CardDescription>
                   </div>
                   {getStatusBadge(event.status)}
                 </div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mt-2 bg-muted/50 w-fit px-2 py-1 rounded-md">
+                  <MapPin className="h-3 w-3" />
+                  {event.venue || 'TBA'}
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Period: </span>
-                      <span className="font-medium">
-                        {event.startDate ? new Date(event.startDate).toLocaleDateString() : 'N/A'} - {' '}
-                        {event.endDate ? new Date(event.endDate).toLocaleDateString() : 'N/A'}
-                      </span>
+              <CardContent className="flex-1 pb-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/60 border border-muted shadow-sm">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Schedule</p>
+                      <p className="text-xs font-semibold">
+                        {event.startDate ? new Date(event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '---'}
+                      </p>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Duration: </span>
-                      <span className="font-medium">{event.duration || 'N/A'} {event.durationUnit || 'days'}</span>
+                    <div className="h-8 w-[1px] bg-muted mx-2"></div>
+                    <div className="space-y-1 text-right">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Duration</p>
+                      <Badge variant="outline" className="text-primary border-primary/20 font-bold bg-primary/5">
+                        {event.duration} {event.durationUnit}
+                      </Badge>
                     </div>
                   </div>
 
                   {event.description && (
-                    <p className="text-sm text-muted-foreground">{event.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-3 italic">"{event.description}"</p>
                   )}
 
                   {isEventSoon(event.startDate) && (
-                    <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-100 p-2 rounded-md">
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-orange-700 bg-orange-200/50 p-2.5 rounded-lg border border-orange-200 animate-pulse">
                       <AlertTriangle className="h-4 w-4" />
-                      <span>Event starting in less than 24 hours!</span>
+                      <span>STARTS WITHIN 24 HOURS</span>
                     </div>
                   )}
 
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 pt-4 mt-auto border-t border-dashed">
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
+                      className="flex-1 gap-2 hover:bg-primary/10 hover:text-primary rounded-lg font-bold text-xs h-9"
                       onClick={() => {
                         setEditingRecord(event);
                         setStartDate(event.startDate);
@@ -405,10 +482,12 @@ const FacultyUpcomingEvents = () => {
                       }}
                     >
                       <Edit className="h-4 w-4" />
+                      Edit
                     </Button>
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
+                      className="gap-2 hover:bg-destructive/10 hover:text-destructive rounded-lg text-xs h-9"
                       onClick={() => handleDelete(event.id)}
                     >
                       <Trash2 className="h-4 w-4" />

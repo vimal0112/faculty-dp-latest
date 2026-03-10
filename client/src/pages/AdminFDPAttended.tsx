@@ -57,7 +57,8 @@ const AdminFDPAttended = () => {
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      records.map((record: any) => ({
+      records.map((record: any, index: number) => ({
+        'S.No': index + 1,
         'Faculty ID': record.facultyId?._id || record.facultyId || 'N/A',
         'Faculty Name': record.facultyId?.name || 'N/A',
         'Title': record.title,
@@ -83,8 +84,9 @@ const AdminFDPAttended = () => {
 
     autoTable(doc, {
       startY: 35,
-      head: [['Faculty', 'Title', 'Mode', 'Duration', 'Venue', 'Status']],
-      body: records.map((record: any) => [
+      head: [['S.No', 'Faculty', 'Title', 'Mode', 'Duration', 'Venue', 'Status']],
+      body: records.map((record: any, index: number) => [
+        index + 1,
         record.facultyId?.name || 'N/A',
         record.title,
         record.mode,

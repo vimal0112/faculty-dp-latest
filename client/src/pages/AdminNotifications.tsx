@@ -37,9 +37,9 @@ const AdminNotifications = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [notificationsData, facultyData] = await Promise.all([
+      const [notificationsData, recipientsData] = await Promise.all([
         adminAPI.getNotifications(),
-        adminAPI.getFaculty(),
+        adminAPI.getRecipients(),
       ]);
 
       setNotificationList((notificationsData || []).map((item: any) => ({
@@ -52,7 +52,7 @@ const AdminNotifications = () => {
         type: item.type || 'info',
       })));
 
-      setFaculty(facultyData || []);
+      setFaculty(recipientsData || []);
     } catch (error) {
       console.error('Failed to load data:', error);
       toast.error('Failed to load notifications');
@@ -166,7 +166,7 @@ const AdminNotifications = () => {
                     <SelectContent>
                       {faculty.map((fac: any) => (
                         <SelectItem key={fac._id || fac.id} value={fac._id || fac.id}>
-                          {fac.name} ({fac.department || 'N/A'})
+                          {fac.name} ({fac.role?.toUpperCase()} - {fac.department || 'N/A'})
                         </SelectItem>
                       ))}
                     </SelectContent>

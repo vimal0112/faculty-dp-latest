@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Award, Users, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { hodAPI } from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -207,23 +208,47 @@ const HODAnalytics = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Performing Faculty</CardTitle>
-              <CardDescription>Based on FDP participation</CardDescription>
+          <Card className="md:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Top Performing Faculty</CardTitle>
+                <CardDescription>Based on total FDP participation (Attended & Organized)</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={loadAnalytics} disabled={loading}>
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Refresh Data
+              </Button>
             </CardHeader>
             <CardContent>
               {analytics?.topFaculty && analytics.topFaculty.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={analytics.topFaculty.slice(0, 5).map((fac: any) => ({
-                    name: fac.faculty?.[0]?.name?.split(' ')[0] || 'Faculty',
-                    count: fac.count || 0,
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#3b82f6" />
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart
+                    data={analytics.topFaculty.map((fac: any) => ({
+                      name: fac.faculty?.[0]?.name || 'Unknown Faculty',
+                      count: fac.count || 0,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      angle={-45}
+                      textAnchor="end"
+                      interval={0}
+                      height={80}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis label={{ value: 'FDP Participation Count', angle: -90, position: 'insideLeft', offset: 0 }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                      itemStyle={{ color: 'hsl(var(--primary))' }}
+                    />
+                    <Bar
+                      dataKey="count"
+                      fill="hsl(var(--primary))"
+                      radius={[4, 4, 0, 0]}
+                      barSize={60}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (

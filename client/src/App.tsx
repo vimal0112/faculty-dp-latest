@@ -66,102 +66,102 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-              <Route
-                path="/faculty/fdps"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyFDPs />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/fdp/attended"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyFDPAttended />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/fdp/organized"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyFDPOrganized />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/abl"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyABL />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/adjunct"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyAdjunctFaculty />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/joint-teaching"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyJointTeaching />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/seminars"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultySeminars />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/events"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyEvents />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/notifications"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyNotifications />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/reimbursements"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyFDPReimbursement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/achievements"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyAchievements />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faculty/internships"
-                element={
-                  <ProtectedRoute allowedRoles={['faculty']}>
-                    <FacultyInternships />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/faculty/fdps"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyFDPs />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/fdp/attended"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyFDPAttended />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/fdp/organized"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyFDPOrganized />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/abl"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyABL />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/adjunct"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyAdjunctFaculty />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/joint-teaching"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyJointTeaching />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/seminars"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultySeminars />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/events"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyEvents />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/notifications"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyNotifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/reimbursements"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyFDPReimbursement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/achievements"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyAchievements />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/faculty/internships"
+                  element={
+                    <ProtectedRoute allowedRoles={['faculty']}>
+                      <FacultyInternships />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/admin"
                   element={
@@ -170,110 +170,110 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-              <Route
-                path="/admin/faculty"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminFaculty />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/fdp/attended"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminFDPAttended />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/fdp/organized"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminFDPOrganized />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/seminars"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminSeminars />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/abl"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminABL />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/adjunct"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminAdjunctFaculty />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/joint-teaching"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminJointTeaching />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/notifications"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminNotifications />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/settings"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminSettings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/reimbursements"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminReimbursements />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/achievements"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminAchievements />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/internships"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminInternships />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/audit"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AuditReports />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/admin/faculty"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminFaculty />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/fdp/attended"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminFDPAttended />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/fdp/organized"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminFDPOrganized />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/seminars"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminSeminars />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/abl"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminABL />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/adjunct"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminAdjunctFaculty />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/joint-teaching"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminJointTeaching />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/notifications"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminNotifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminSettings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reimbursements"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminReimbursements />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/achievements"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminAchievements />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/internships"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminInternships />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/audit"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AuditReports />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/hod"
                   element={
@@ -282,46 +282,46 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
-              <Route
-                path="/hod/faculty"
-                element={
-                  <ProtectedRoute allowedRoles={['hod']}>
-                    <HODFaculty />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/hod/analytics"
-                element={
-                  <ProtectedRoute allowedRoles={['hod']}>
-                    <HODAnalytics />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/hod/records"
-                element={
-                  <ProtectedRoute allowedRoles={['hod']}>
-                    <HODRecords />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/hod/notifications"
-                element={
-                  <ProtectedRoute allowedRoles={['hod']}>
-                    <HODNotifications />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/hod/audit"
-                element={
-                  <ProtectedRoute allowedRoles={['hod']}>
-                    <AuditReports />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/hod/faculty"
+                  element={
+                    <ProtectedRoute allowedRoles={['hod']}>
+                      <HODFaculty />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/hod/analytics"
+                  element={
+                    <ProtectedRoute allowedRoles={['hod']}>
+                      <HODAnalytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/hod/records"
+                  element={
+                    <ProtectedRoute allowedRoles={['hod']}>
+                      <HODRecords />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/hod/notifications"
+                  element={
+                    <ProtectedRoute allowedRoles={['hod']}>
+                      <HODNotifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/hod/audit"
+                  element={
+                    <ProtectedRoute allowedRoles={['hod']}>
+                      <AuditReports />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

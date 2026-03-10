@@ -15,15 +15,15 @@ const internshipSchema = new mongoose.Schema({
   description: { type: String },
   skillsGained: [{ type: String }],
   projectTitle: { type: String },
-  status: { 
-    type: String, 
-    enum: ['pending', 'approved', 'rejected', 'ongoing', 'completed'], 
-    default: 'pending' 
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'ongoing', 'completed'],
+    default: 'completed'
   },
   feedback: { type: String }, // Feedback by faculty
   feedbackRating: { type: Number, min: 1, max: 5 }, // 5-star rating
   certificate: { type: String, required: true }, // Path to internship certificate - mandatory
-  report: { type: String, required: true }, // Path to internship report - mandatory
+  report: { type: String, required: false }, // Path to internship report - optional
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

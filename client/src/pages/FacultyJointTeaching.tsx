@@ -19,6 +19,9 @@ const FacultyJointTeaching = () => {
   const [editingRecord, setEditingRecord] = useState<JointTeaching | null>(null);
   const API_BASE_URL = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3001/api';
 
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+
   useEffect(() => {
     loadRecords();
   }, []);
@@ -28,7 +31,7 @@ const FacultyJointTeaching = () => {
       setLoading(true);
       const data = await facultyAPI.getJointTeaching();
       setRecords(data.map((item: any) => ({
-        id: item.id,
+        id: item._id || item.id,
         facultyId: item.facultyId,
         courseName: item.courseName,
         courseCode: item.courseCode,
@@ -49,25 +52,31 @@ const FacultyJointTeaching = () => {
     }
   };
 
-  const calculateDuration = (fromDate: string, toDate: string) => {
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
-    const diffTime = Math.abs(to.getTime() - from.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+  const calculateDuration = (fromStr: string, toStr: string) => {
+    if (!fromStr || !toStr) return '';
+    const from = new Date(fromStr);
+    const to = new Date(toStr);
+    const diffTime = to.getTime() - from.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    if (diffDays <= 0) return '';
+
     if (diffDays > 6) {
-      const weeks = Math.floor(diffDays / 7);
-      const remainingDays = diffDays % 7;
-      return remainingDays > 0 ? `${weeks} weeks ${remainingDays} days` : `${weeks} weeks`;
+      const weeks = Math.round(diffDays / 7);
+      return `${weeks} week${weeks !== 1 ? 's' : ''}`;
     }
-    return `${diffDays} days`;
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
   };
+
+  const calculatedDurationDisplay = fromDate && toDate && new Date(toDate) >= new Date(fromDate)
+    ? calculateDuration(fromDate, toDate)
+    : '';
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const certificateFile = (formData.get('certificate') as File);
-    
+
     // Validate mandatory fields
     const courseName = formData.get('courseName') as string;
     const courseCode = formData.get('courseCode') as string;
@@ -76,43 +85,43 @@ const FacultyJointTeaching = () => {
     const fromDate = formData.get('fromDate') as string;
     const toDate = formData.get('toDate') as string;
     const toBePaid = formData.get('toBePaid') as string;
-    
+
     // Check mandatory fields
     if (!courseName?.trim()) {
       toast({ title: 'Course Name is required', variant: 'destructive' });
       return;
     }
-    
+
     if (!courseCode?.trim()) {
       toast({ title: 'Course Code is required', variant: 'destructive' });
       return;
     }
-    
+
     if (!facultyWithinCollege?.trim()) {
       toast({ title: 'Faculty Within College is required', variant: 'destructive' });
       return;
     }
-    
+
     if (!hours || parseInt(hours) < 1) {
       toast({ title: 'Hours must be at least 1', variant: 'destructive' });
       return;
     }
-    
+
     if (!fromDate || !toDate) {
       toast({ title: 'From Date and To Date are required', variant: 'destructive' });
       return;
     }
-    
+
     if (new Date(toDate) < new Date(fromDate)) {
       toast({ title: 'To Date must be on or after From Date', variant: 'destructive' });
       return;
     }
-    
+
     if (!toBePaid || parseInt(toBePaid) < 0) {
       toast({ title: 'To be Paid must be a positive number', variant: 'destructive' });
       return;
     }
-    
+
     // Validate certificate for new records
     if (!editingRecord) {
       if (!certificateFile || certificateFile.size === 0) {
@@ -120,14 +129,14 @@ const FacultyJointTeaching = () => {
         return;
       }
     }
-    
+
     if (certificateFile && certificateFile.size > 0) {
       // Check file size
       if (certificateFile.size > 10 * 1024 * 1024) {
         toast({ title: 'File size must be less than 10MB', variant: 'destructive' });
         return;
       }
-      
+
       // Check file type
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(certificateFile.type)) {
@@ -135,9 +144,9 @@ const FacultyJointTeaching = () => {
         return;
       }
     }
-    
+
     const calculatedDuration = calculateDuration(fromDate, toDate);
-    
+
     const data: any = {
       courseName: courseName.trim(),
       courseCode: courseCode.trim(),
@@ -162,15 +171,17 @@ const FacultyJointTeaching = () => {
         await facultyAPI.createJointTeaching(data);
         toast({ title: 'Joint teaching added successfully' });
       }
-      
+
       // Reset form and close dialog
       await loadRecords();
       setIsDialogOpen(false);
       setEditingRecord(null);
-      
+      setFromDate('');
+      setToDate('');
+
       // Reset form fields by clearing the form
       e.currentTarget.reset();
-      
+
     } catch (error: any) {
       console.error('Failed to save record:', error);
       toast({ title: error.message || 'Failed to save record', variant: 'destructive' });
@@ -194,18 +205,8 @@ const FacultyJointTeaching = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Joint Teaching</h1>
-          <p className="text-muted-foreground">Manage collaborative teaching courses</p>
+          <p className="text-muted-foreground">Manage your joint teaching assignments and credits</p>
         </div>
-        <Button 
-          onClick={() => {
-            setEditingRecord(null);
-            setIsDialogOpen(true);
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Joint Teaching
-        </Button>
       </div>
 
       {/* Dialog for Add/Edit */}
@@ -236,29 +237,58 @@ const FacultyJointTeaching = () => {
               <Label htmlFor="hours">Hours</Label>
               <Input id="hours" name="hours" type="number" min="1" defaultValue={editingRecord?.hours} required />
             </div>
-            <div>
-              <Label htmlFor="fromDate">From Date</Label>
-              <Input id="fromDate" name="fromDate" type="date" defaultValue={editingRecord?.fromDate?.split('T')[0]} required />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fromDate">From Date*</Label>
+                <Input
+                  id="fromDate"
+                  name="fromDate"
+                  type="date"
+                  value={fromDate || (editingRecord?.fromDate ? new Date(editingRecord.fromDate).toISOString().split('T')[0] : '')}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="toDate">To Date*</Label>
+                <Input
+                  id="toDate"
+                  name="toDate"
+                  type="date"
+                  value={toDate || (editingRecord?.toDate ? new Date(editingRecord.toDate).toISOString().split('T')[0] : '')}
+                  onChange={(e) => setToDate(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="toDate">To Date</Label>
-              <Input id="toDate" name="toDate" type="date" defaultValue={editingRecord?.toDate?.split('T')[0]} required />
+
+            {/* Duration Box */}
+            <div className="rounded-lg border bg-muted/50 px-4 py-3">
+              <Label className="text-xs text-muted-foreground">Duration (auto-calculated)</Label>
+              <p className="mt-1 font-medium">
+                {calculatedDurationDisplay || (
+                  <span className="text-muted-foreground">Select From and To dates</span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {calculatedDurationDisplay ? '>6 days shown in weeks, otherwise in days' : 'Select dates to see duration'}
+              </p>
             </div>
             <div>
               <Label htmlFor="toBePaid">To be Paid (₹)</Label>
-              <Input 
-                id="toBePaid" 
-                name="toBePaid" 
-                type="number" 
-                min="0" 
-                step="1" 
-                defaultValue={editingRecord?.toBePaid} 
-                placeholder="0" 
-                required 
+              <Input
+                id="toBePaid"
+                name="toBePaid"
+                type="number"
+                min="0"
+                step="1"
+                defaultValue={editingRecord?.toBePaid}
+                placeholder="0"
+                required
                 onKeyPress={(e) => {
                   // Only allow numbers, backspace, delete, tab, escape, enter
-                  if (!/[0-9\b\t\s]/.test(e.key) && 
-                      !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter'].includes(e.key)) {
+                  if (!/[0-9\b\t\s]/.test(e.key) &&
+                    !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter'].includes(e.key)) {
                     e.preventDefault();
                   }
                 }}
@@ -354,11 +384,10 @@ const FacultyJointTeaching = () => {
                   )}
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Status:</span>
-                    <span className={`text-sm font-medium px-2 py-1 rounded ${
-                      jt.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    <span className={`text-sm font-medium px-2 py-1 rounded ${jt.status === 'approved' ? 'bg-green-100 text-green-800' :
                       jt.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
                       {jt.status || 'pending'}
                     </span>
                   </div>
@@ -387,6 +416,23 @@ const FacultyJointTeaching = () => {
           ))}
         </div>
       )}
+
+      {/* Move Add Button to the Bottom */}
+      <div className="flex justify-end pt-6">
+        <Button
+          onClick={() => {
+            setEditingRecord(null);
+            setFromDate('');
+            setToDate('');
+            setIsDialogOpen(true);
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Joint Teaching
+        </Button>
+      </div>
+
     </div>
   );
 };

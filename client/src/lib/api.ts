@@ -799,6 +799,10 @@ export const adminAPI = {
     return apiRequest<any>(`/admin/faculty/${id}`);
   },
 
+  getRecipients: async () => {
+    return apiRequest<any[]>('/admin/recipients');
+  },
+
   // FDP Attended
   getFDPAttended: async () => {
     return apiRequest<any[]>('/admin/fdp/attended');
@@ -1033,6 +1037,12 @@ export const hodAPI = {
 
   markNotificationRead: async (id: string) => {
     return apiRequest<any>(`/hod/notifications/${id}/read`, {
+      method: 'PUT',
+    });
+  },
+
+  markAllNotificationsRead: async () => {
+    return apiRequest<{ message: string }>('/hod/notifications/read-all', {
       method: 'PUT',
     });
   },

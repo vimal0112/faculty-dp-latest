@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FacultyDetailsModal } from '@/components/FacultyDetailsModal';
- 
+
 
 const HODFaculty = () => {
   const { user } = useAuth();
@@ -52,7 +52,8 @@ const HODFaculty = () => {
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      faculty.map((fac: any) => ({
+      faculty.map((fac: any, index: number) => ({
+        'S.No': index + 1,
         'Faculty ID': fac._id || fac.id,
         'Name': fac.name,
         'Email': fac.email,
@@ -76,8 +77,9 @@ const HODFaculty = () => {
 
     autoTable(doc, {
       startY: 35,
-      head: [['ID', 'Name', 'Email', 'Designation', 'Department']],
-      body: faculty.map((fac: any) => [
+      head: [['S.No', 'ID', 'Name', 'Email', 'Designation', 'Department']],
+      body: faculty.map((fac: any, index: number) => [
+        index + 1,
         (fac._id || fac.id).toString().substring(0, 8),
         fac.name,
         fac.email,

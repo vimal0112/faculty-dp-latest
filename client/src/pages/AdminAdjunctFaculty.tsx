@@ -40,16 +40,16 @@ const AdminAdjunctFaculty = () => {
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
     try {
       await adminAPI.updateAdjunctFacultyStatus(id, status);
-      toast({ 
+      toast({
         title: `Record ${status} successfully`,
         variant: status === 'approved' ? 'default' : 'destructive'
       });
       await loadRecords();
     } catch (error) {
       console.error(`Failed to ${status} record:`, error);
-      toast({ 
-        title: `Failed to ${status} record`, 
-        variant: 'destructive' 
+      toast({
+        title: `Failed to ${status} record`,
+        variant: 'destructive'
       });
     }
   };
@@ -89,7 +89,8 @@ const AdminAdjunctFaculty = () => {
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      records.map((record: any) => ({
+      records.map((record: any, index: number) => ({
+        'S.No': index + 1,
         'Faculty ID': record.facultyId?._id || record.facultyId || 'N/A',
         'Faculty Name': record.facultyId?.name || 'N/A',
         'Adjunct Faculty Name': record.facultyName,
@@ -109,17 +110,18 @@ const AdminAdjunctFaculty = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    
+
     doc.setFontSize(18);
     doc.text('Adjunct Faculty Records', 14, 20);
-    
+
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
 
     autoTable(doc, {
       startY: 35,
-      head: [['Faculty', 'Adjunct Faculty', 'Department', 'Course Code', 'Duration', 'Status']],
-      body: records.map((record: any) => [
+      head: [['S.No', 'Faculty', 'Adjunct Faculty', 'Department', 'Course Code', 'Duration', 'Status']],
+      body: records.map((record: any, index: number) => [
+        index + 1,
         record.facultyId?.name || 'N/A',
         record.facultyName,
         record.department,
@@ -236,8 +238,8 @@ const AdminAdjunctFaculty = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => {
                               setSelectedRecord(record);
@@ -247,9 +249,9 @@ const AdminAdjunctFaculty = () => {
                             View
                           </Button>
                           {record.status !== 'approved' && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               className="text-green-600 hover:text-green-700"
                               onClick={() => updateStatus(record._id || record.id, 'approved')}
                             >
@@ -258,9 +260,9 @@ const AdminAdjunctFaculty = () => {
                             </Button>
                           )}
                           {record.status !== 'rejected' && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               className="text-red-600 hover:text-red-700"
                               onClick={() => updateStatus(record._id || record.id, 'rejected')}
                             >

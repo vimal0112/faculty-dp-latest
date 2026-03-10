@@ -54,7 +54,8 @@ const AdminAchievements = () => {
 
   const downloadExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      records.map((record: any) => ({
+      records.map((record: any, index: number) => ({
+        'S.No': index + 1,
         'Faculty Name': record.facultyId?.name || 'N/A',
         'Title': record.title,
         'Category': record.category,
@@ -70,17 +71,18 @@ const AdminAchievements = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    
+
     doc.setFontSize(18);
     doc.text('Faculty Achievements', 14, 20);
-    
+
     doc.setFontSize(11);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
 
     autoTable(doc, {
       startY: 35,
-      head: [['Faculty', 'Title', 'Category', 'Issuer', 'Date', 'Status']],
-      body: records.map((record: any) => [
+      head: [['S.No', 'Faculty', 'Title', 'Category', 'Issuer', 'Date', 'Status']],
+      body: records.map((record: any, index: number) => [
+        index + 1,
         record.facultyId?.name || 'N/A',
         record.title,
         record.category,
