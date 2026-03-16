@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Briefcase, Eye, Calendar, DollarSign, Users, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, Briefcase, Eye, Calendar, DollarSign, Users, Star, Download } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { facultyAPI } from '@/lib/api';
+import { formatDurationGlobal } from '@/lib/utils';
 
 const FacultyInternships = () => {
   const { user } = useAuth();
@@ -27,6 +29,7 @@ const FacultyInternships = () => {
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [stipendAmount, setStipendAmount] = useState([0]);
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -52,7 +55,7 @@ const FacultyInternships = () => {
         description: item.description,
         skillsGained: item.skillsGained || [],
         projectTitle: item.projectTitle,
-        status: item.status || 'ongoing',
+        status: item.status || 'pending',
         certificate: item.certificate,
         report: item.report,
       })));
@@ -64,33 +67,17 @@ const FacultyInternships = () => {
     }
   };
 
-  const calculateDuration = (start: string, end: string) => {
-    if (!start || !end) return '';
-
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 6) {
-      const weeks = Math.round(diffDays / 7);
-      return `${weeks} week${weeks > 1 ? 's' : ''}`;
-    } else {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
-    }
-  };
-
   const handleStartDateChange = (date: string) => {
     setStartDate(date);
     if (endDate) {
-      setCalculatedDuration(calculateDuration(date, endDate));
+      setCalculatedDuration(formatDurationGlobal(date, endDate));
     }
   };
 
   const handleEndDateChange = (date: string) => {
     setEndDate(date);
     if (startDate) {
-      setCalculatedDuration(calculateDuration(startDate, date));
+      setCalculatedDuration(formatDurationGlobal(startDate, date));
     }
   };
 
@@ -184,7 +171,7 @@ const FacultyInternships = () => {
       description: formData.get('description') as string,
       skillsGained: (formData.get('skillsGained') as string)?.split(',').map(s => s.trim()).filter(Boolean),
       projectTitle: formData.get('projectTitle') as string,
-      status: formData.get('status') as string || 'completed',
+      status: formData.get('status') === 'completed' ? 'pending' : (formData.get('status') as string || 'pending'),
     };
 
     if (certificateFile && certificateFile.size > 0) {
@@ -339,6 +326,7 @@ const FacultyInternships = () => {
                     id="endDate"
                     name="endDate"
                     type="date"
+                    min={startDate}
                     value={endDate || editingRecord?.endDate || ''}
                     onChange={(e) => handleEndDateChange(e.target.value)}
                     required
@@ -379,7 +367,7 @@ const FacultyInternships = () => {
                 </div>
                 <div>
                   <Label htmlFor="status">Status *</Label>
-                  <Select name="status" defaultValue={editingRecord?.status || 'completed'} required>
+                  <Select name="status" defaultValue={editingRecord?.status === 'pending' ? 'completed' : (editingRecord?.status || 'completed')} required>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -541,26 +529,52 @@ const FacultyInternships = () => {
 
                   <div className="flex items-center gap-4 pt-2">
                     {internship.certificate && (
-                      <a
-                        href={`${API_BASE_URL.replace('/api', '')}${internship.certificate}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Certificate
-                      </a>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" className="h-7 text-primary hover:text-primary/80 px-2" asChild>
+                          <a
+                            href={`${cleanBaseUrl}${internship.certificate}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Certificate
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-primary hover:text-primary/80 px-2 flex items-center gap-1"
+                          onClick={() => handleFileDownload(internship.certificate, `Internship_Certificate_${internship.facultyMemberName.replace(/\s+/g, '_')}`)}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
                     )}
                     {internship.report && (
-                      <a
-                        href={`${API_BASE_URL.replace('/api', '')}${internship.report}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Report
-                      </a>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" className="h-7 text-primary hover:text-primary/80 px-2" asChild>
+                          <a
+                            href={`${cleanBaseUrl}${internship.report}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Report
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-primary hover:text-primary/80 px-2 flex items-center gap-1"
+                          onClick={() => handleFileDownload(internship.report, `Internship_Report_${internship.facultyMemberName.replace(/\s+/g, '_')}`)}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
                     )}
                   </div>
 

@@ -137,6 +137,7 @@ const AdminFaculty = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[80px]">S.No</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Designation</TableHead>
@@ -149,13 +150,14 @@ const AdminFaculty = () => {
               <TableBody>
                 {filteredFaculty.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No faculty members found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredFaculty.map((faculty) => (
+                  filteredFaculty.map((faculty, index) => (
                     <TableRow key={faculty.id}>
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium text-foreground">{faculty.name}</p>

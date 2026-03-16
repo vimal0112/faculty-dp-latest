@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { FileSpreadsheet, FileText, Search, CheckCircle, XCircle, Clock, Download, Eye } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { RecordDetailsModal } from '@/components/RecordDetailsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,8 @@ const AdminABL = () => {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { toast } = useToast();
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -171,6 +174,7 @@ const AdminABL = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[80px]">S.No</TableHead>
                   <TableHead>Faculty Name</TableHead>
                   <TableHead>Subject</TableHead>
                   <TableHead>Course Code</TableHead>
@@ -183,19 +187,20 @@ const AdminABL = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No records found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRecords.map((record: any) => (
+                  filteredRecords.map((record: any, index: number) => (
                     <TableRow key={record._id || record.id}>
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                       <TableCell className="font-medium">
                         {record.facultyId?.name || 'N/A'}
                       </TableCell>
@@ -227,8 +232,18 @@ const AdminABL = () => {
                               setIsViewModalOpen(true);
                             }}
                           >
+                            <Eye className="h-4 w-4 mr-1" />
                             View
                           </Button>
+                          {record.certificate && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleFileDownload(record.certificate, `ABL_Certificate_${record.subjectName.replace(/\s+/g, '_')}`)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
                           {record.status !== 'approved' && (
                             <Button
                               size="sm"

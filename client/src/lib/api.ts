@@ -580,7 +580,14 @@ export const facultyAPI = {
     Object.keys(data).forEach(key => {
       if (key === 'receiptDocument' && data[key] instanceof File) {
         formData.append('receiptDocument', data[key]);
-      } else if (key !== 'receiptDocument') {
+      } else if (key === 'bankDetails' && typeof data[key] === 'object' && data[key] !== null) {
+        // Flatten bankDetails object into individual fields
+        Object.keys(data[key]).forEach(bankKey => {
+          if (data[key][bankKey] !== undefined && data[key][bankKey] !== null) {
+            formData.append(bankKey, data[key][bankKey]);
+          }
+        });
+      } else if (key !== 'receiptDocument' && key !== 'bankDetails') {
         formData.append(key, data[key]);
       }
     });
@@ -602,7 +609,14 @@ export const facultyAPI = {
     Object.keys(data).forEach(key => {
       if (key === 'receiptDocument' && data[key] instanceof File) {
         formData.append('receiptDocument', data[key]);
-      } else if (key !== 'receiptDocument') {
+      } else if (key === 'bankDetails' && typeof data[key] === 'object' && data[key] !== null) {
+        // Flatten bankDetails object into individual fields
+        Object.keys(data[key]).forEach(bankKey => {
+          if (data[key][bankKey] !== undefined && data[key][bankKey] !== null) {
+            formData.append(bankKey, data[key][bankKey]);
+          }
+        });
+      } else if (key !== 'receiptDocument' && key !== 'bankDetails') {
         formData.append(key, data[key]);
       }
     });

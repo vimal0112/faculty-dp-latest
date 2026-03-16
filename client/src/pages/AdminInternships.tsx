@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Search, CheckCircle, XCircle, Eye, Clock, Briefcase } from 'lucide-react';
+import { FileSpreadsheet, FileText, Search, CheckCircle, XCircle, Eye, Clock, Briefcase, Download } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { RecordDetailsModal } from '@/components/RecordDetailsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,8 @@ const AdminInternships = () => {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { toast } = useToast();
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -172,19 +175,19 @@ const AdminInternships = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Supervisor</TableHead>
+                    <TableHead className="w-[80px]">S.No</TableHead>
                     <TableHead>Faculty Name</TableHead>
                     <TableHead>Company</TableHead>
-                    <TableHead>Mode</TableHead>
+                    <TableHead>Position</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.map((record: any) => (
+                  {filteredRecords.map((record: any, index: number) => (
                     <TableRow key={record._id || record.id}>
-                      <TableCell>{record.facultyId?.name || 'N/A'}</TableCell>
+                      <TableCell>{index + 1}</TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{record.studentName}</div>
@@ -215,6 +218,24 @@ const AdminInternships = () => {
                               <Eye className="h-4 w-4 mr-1" />
                               View
                             </Button>
+                            {record.certificate && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFileDownload(record.certificate, `Internship_Certificate_${record.studentName.replace(/\s+/g, '_')}`)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {record.report && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFileDownload(record.report, `Internship_Report_${record.studentName.replace(/\s+/g, '_')}`)}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
@@ -248,6 +269,26 @@ const AdminInternships = () => {
                               <Eye className="h-4 w-4 mr-1" />
                               View
                             </Button>
+                            {record.certificate && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                title="Download Certificate"
+                                onClick={() => handleFileDownload(record.certificate, `Internship_Certificate_${record.studentName.replace(/\s+/g, '_')}`)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {record.report && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                title="Download Report"
+                                onClick={() => handleFileDownload(record.report, `Internship_Report_${record.studentName.replace(/\s+/g, '_')}`)}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            )}
                             <span className="text-sm text-muted-foreground flex items-center">Processed</span>
                           </div>
                         )}

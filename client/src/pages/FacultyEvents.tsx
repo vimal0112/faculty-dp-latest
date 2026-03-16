@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { facultyAPI } from '@/lib/api';
+import { formatDurationGlobal } from '@/lib/utils';
 
 const FacultyEvents = () => {
   const { user } = useAuth();
@@ -22,9 +23,12 @@ const FacultyEvents = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [calculatedDuration, setCalculatedDuration] = useState('');
+  const [nowTick, setNowTick] = useState(new Date());
 
   useEffect(() => {
     loadRecords();
+    const timer = setInterval(() => setNowTick(new Date()), 60000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -87,33 +91,17 @@ const FacultyEvents = () => {
     }
   };
 
-  const calculateDuration = (start: string, end: string) => {
-    if (!start || !end) return '';
-
-    const startDateObj = new Date(start);
-    const endDateObj = new Date(end);
-    const diffTime = Math.abs(endDateObj.getTime() - startDateObj.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive
-
-    if (diffDays > 6) {
-      const weeks = Math.round(diffDays / 7);
-      return `${weeks} week${weeks > 1 ? 's' : ''}`;
-    } else {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
-    }
-  };
-
   const handleStartDateChange = (date: string) => {
     setStartDate(date);
     if (endDate) {
-      setCalculatedDuration(calculateDuration(date, endDate));
+      setCalculatedDuration(formatDurationGlobal(date, endDate));
     }
   };
 
   const handleEndDateChange = (date: string) => {
     setEndDate(date);
     if (startDate) {
-      setCalculatedDuration(calculateDuration(startDate, date));
+      setCalculatedDuration(formatDurationGlobal(startDate, date));
     }
   };
 
@@ -151,7 +139,7 @@ const FacultyEvents = () => {
     }
 
     const formData = new FormData(e.currentTarget);
-    const calcDurationVal = calculateDuration(startDate, endDate);
+    const calcDurationVal = formatDurationGlobal(startDate, endDate);
 
     // Determine duration and unit from auto-calculation
     const durationMatch = calcDurationVal.match(/(\d+)/);
@@ -213,11 +201,35 @@ const FacultyEvents = () => {
 
   const isEventSoon = (dateStr: string) => {
     if (!dateStr) return false;
-    const now = new Date();
+    const now = nowTick;
     const eventStart = new Date(dateStr);
     const timeUntilEvent = eventStart.getTime() - now.getTime();
     const hoursUntilEvent = timeUntilEvent / (1000 * 60 * 60);
     return hoursUntilEvent <= 24 && hoursUntilEvent > 0;
+  };
+
+  const getEventTimeRemaining = (dateStr: string) => {
+    if (!dateStr) return null;
+    const now = nowTick;
+    const eventStart = new Date(dateStr);
+    const timeUntilEvent = eventStart.getTime() - now.getTime();
+
+    if (timeUntilEvent <= 0) return null;
+
+    const hoursUntilEvent = Math.floor(timeUntilEvent / (1000 * 60 * 60));
+    const minutesUntilEvent = Math.floor(timeUntilEvent / (1000 * 60));
+
+    if (hoursUntilEvent > 24) return null;
+
+    if (hoursUntilEvent >= 1) {
+      return `STARTS WITHIN ${hoursUntilEvent} HOUR${hoursUntilEvent > 1 ? 'S' : ''}`;
+    }
+
+    if (minutesUntilEvent > 0) {
+      return `STARTS WITHIN ${minutesUntilEvent} MIN${minutesUntilEvent > 1 ? 'S' : ''}`;
+    }
+
+    return 'STARTS WITHIN 1 MIN';
   };
 
   return (
@@ -287,6 +299,7 @@ const FacultyEvents = () => {
                       id="endDate"
                       name="endDate"
                       type="date"
+                      min={startDate}
                       value={endDate || editingRecord?.endDate || ''}
                       onChange={(e) => handleEndDateChange(e.target.value)}
                       required
@@ -419,12 +432,16 @@ const FacultyEvents = () => {
                     <p className="text-sm text-muted-foreground line-clamp-3 italic">"{event.description}"</p>
                   )}
 
-                  {isEventSoon(event.startDate) && (
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-orange-700 bg-orange-200/50 p-2.5 rounded-lg border border-orange-200 animate-pulse">
-                      <AlertTriangle className="h-4 w-4" />
-                      <span>STARTS WITHIN 24 HOURS</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const timeMessage = getEventTimeRemaining(event.startDate);
+                    if (!timeMessage) return null;
+                    return (
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-orange-700 bg-orange-200/50 p-2.5 rounded-lg border border-orange-200 animate-pulse">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>{timeMessage}</span>
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex gap-2 pt-4 mt-auto border-t border-dashed">
                     <Button

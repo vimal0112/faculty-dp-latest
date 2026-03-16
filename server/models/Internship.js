@@ -18,7 +18,7 @@ const internshipSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected', 'ongoing', 'completed'],
-    default: 'completed'
+    default: 'pending'
   },
   feedback: { type: String }, // Feedback by faculty
   feedbackRating: { type: Number, min: 1, max: 5 }, // 5-star rating

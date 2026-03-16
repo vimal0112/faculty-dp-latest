@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Search, Check, X } from 'lucide-react';
+import { FileSpreadsheet, FileText, Search, Check, X, Download, Eye } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { RecordDetailsModal } from '@/components/RecordDetailsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,8 @@ const AdminFDPOrganized = () => {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const { toast } = useToast();
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -142,6 +145,7 @@ const AdminFDPOrganized = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[80px]">S.No</TableHead>
                   <TableHead>Faculty</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Venue</TableHead>
@@ -153,19 +157,20 @@ const AdminFDPOrganized = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       No records found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRecords.map((record: any) => (
+                  filteredRecords.map((record: any, index: number) => (
                     <TableRow key={record._id || record.id}>
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                       <TableCell className="font-medium">
                         {record.facultyId?.name || (record.facultyId?._id || record.facultyId || 'N/A').toString().substring(0, 8)}
                       </TableCell>
@@ -213,8 +218,18 @@ const AdminFDPOrganized = () => {
                               setIsViewModalOpen(true);
                             }}
                           >
+                            <Eye className="h-4 w-4 mr-1" />
                             View
                           </Button>
+                          {record.certificate && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleFileDownload(record.certificate, `FDP_Organized_Certificate_${record.title.replace(/\s+/g, '_')}`)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

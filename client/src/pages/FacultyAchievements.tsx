@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Award, Eye, CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Award, Eye, CheckCircle, XCircle, Clock, FileText, Download } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ const FacultyAchievements = () => {
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [supportingDocFile, setSupportingDocFile] = useState<File | null>(null);
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -91,40 +93,40 @@ const FacultyAchievements = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Check if user is authenticated
     if (!user?.id) {
       toast({ title: 'Authentication required', description: 'Please log in to add achievements', variant: 'destructive' });
       return;
     }
-    
+
     const formData = new FormData(e.currentTarget);
     const certificateFile = formData.get('certificate') as File;
     const supportingDocFile = formData.get('supportingDocument') as File;
-    
+
     // Validate certificate is mandatory
     if (!certificateFile && !editingRecord) {
       toast({ title: 'Certificate required', description: 'Please upload a certificate file', variant: 'destructive' });
       return;
     }
-    
+
     // Validate patent type if patent is selected
     if (category === 'patent' && !patentType.trim()) {
       toast({ title: 'Patent type required', description: 'Please select a patent type', variant: 'destructive' });
       return;
     }
-    
+
     // Validate file formats
     if (certificateFile && certificateFile.size > 0 && !validateFileFormat(certificateFile)) {
       toast({ title: 'Invalid certificate format', description: 'Please upload PDF, JPG, or PNG files only', variant: 'destructive' });
       return;
     }
-    
+
     if (supportingDocFile && supportingDocFile.size > 0 && !validateFileFormat(supportingDocFile)) {
       toast({ title: 'Invalid supporting document format', description: 'Please upload PDF, JPG, or PNG files only', variant: 'destructive' });
       return;
     }
-    
+
     const achievementData: any = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
@@ -132,7 +134,7 @@ const FacultyAchievements = () => {
       issuer: formData.get('issuer') as string,
       date: formData.get('date') as string,
     };
-    
+
     // Add patent type if applicable
     if (category === 'patent') {
       achievementData.patentType = patentType;
@@ -168,7 +170,7 @@ const FacultyAchievements = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this achievement?')) return;
-    
+
     try {
       await facultyAPI.deleteAchievement(id);
       toast({ title: 'Achievement deleted successfully', variant: 'destructive' });
@@ -242,9 +244,9 @@ const FacultyAchievements = () => {
 
               <div>
                 <Label htmlFor="category">Category *</Label>
-                <Select 
-                  name="category" 
-                  value={editingRecord?.category || category} 
+                <Select
+                  name="category"
+                  value={editingRecord?.category || category}
                   onValueChange={handleCategoryChange}
                   required
                 >
@@ -263,13 +265,13 @@ const FacultyAchievements = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {category === 'patent' && (
                 <div>
                   <Label htmlFor="patentType">Patent Type *</Label>
-                  <Select 
-                    name="patentType" 
-                    value={patentType} 
+                  <Select
+                    name="patentType"
+                    value={patentType}
                     onValueChange={setPatentType}
                     required={category === 'patent'}
                   >
@@ -403,31 +405,57 @@ const FacultyAchievements = () => {
                       {achievement.date ? new Date(achievement.date).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
-                  
+
                   <p className="text-sm">{achievement.description}</p>
 
                   <div className="flex items-center gap-2 flex-wrap">
                     {achievement.certificate && (
-                      <a
-                        href={`${API_BASE_URL.replace('/api', '')}${achievement.certificate}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Certificate
-                      </a>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" className="h-7 text-primary hover:text-primary/80 px-2" asChild>
+                          <a
+                            href={`${cleanBaseUrl}${achievement.certificate}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Certificate
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-primary hover:text-primary/80 px-2 flex items-center gap-1"
+                          onClick={() => handleFileDownload(achievement.certificate, `Achievement_Certificate_${achievement.title.replace(/\s+/g, '_')}`)}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
                     )}
                     {achievement.supportingDocument && (
-                      <a
-                        href={`${API_BASE_URL.replace('/api', '')}${achievement.supportingDocument}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <FileText className="h-4 w-4" />
-                        Document
-                      </a>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" className="h-7 text-primary hover:text-primary/80 px-2" asChild>
+                          <a
+                            href={`${cleanBaseUrl}${achievement.supportingDocument}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1"
+                          >
+                            <FileText className="h-4 w-4" />
+                            Document
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-primary hover:text-primary/80 px-2 flex items-center gap-1"
+                          onClick={() => handleFileDownload(achievement.supportingDocument, `Achievement_Doc_${achievement.title.replace(/\s+/g, '_')}`)}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
                     )}
                   </div>
 

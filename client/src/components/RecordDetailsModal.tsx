@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, ExternalLink } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 
 export type RecordType = 'fdp-attended' | 'fdp-organized' | 'seminar' | 'joint-teaching' | 'abl' | 'adjunct-faculty' | 'internship';
 
@@ -68,6 +69,27 @@ export function RecordDetailsModal({
         return `${baseUrl}${cleanPath}`;
     };
 
+    const handleDownload = async (path: string, fileName: string) => {
+        if (!path) return;
+        const url = getDocUrl(path);
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName || path.split('/').pop() || 'download';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error('Download failed:', error);
+            // Fallback to direct link if fetch fails
+            window.open(url, '_blank');
+        }
+    };
+
     const renderDocument = (path: string, label: string = 'Certificate') => {
         if (!path) return null;
         const url = getDocUrl(path);
@@ -79,14 +101,16 @@ export function RecordDetailsModal({
                     <Button variant="outline" size="sm" asChild>
                         <a href={url} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            View Argument
+                            View
                         </a>
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
-                        <a href={url} download>
-                            <Download className="h-4 w-4 mr-2" />
-                            Download
-                        </a>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(path, `${label}_${record.title || record.courseName || record.studentName || 'document'}`.replace(/\s+/g, '_'))}
+                    >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
                     </Button>
                 </div>
             </div>
@@ -169,7 +193,7 @@ export function RecordDetailsModal({
                             {renderStatus(record.status)}
                         </div>
                         <div className="border-t pt-4">
-                            {renderDocument(record.certificate, 'Certificate')}
+                            {renderDocument(record.proofDoc, 'Proof Document')}
                         </div>
                     </>
                 );
@@ -185,7 +209,7 @@ export function RecordDetailsModal({
                             {renderStatus(record.status)}
                         </div>
                         <div className="border-t pt-4">
-                            {renderDocument(record.certificate, 'Certificate')}
+                            {renderDocument(record.proofDoc, 'Proof Document')}
                         </div>
                     </>
                 );

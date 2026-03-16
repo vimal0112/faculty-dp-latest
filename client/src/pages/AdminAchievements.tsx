@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Search, Check, X, Award, Eye } from 'lucide-react';
+import { FileSpreadsheet, FileText, Search, Check, X, Award, Eye, Download } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ const AdminAchievements = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -150,6 +152,7 @@ const AdminAchievements = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[80px]">S.No</TableHead>
                     <TableHead>Faculty</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Category</TableHead>
@@ -160,8 +163,9 @@ const AdminAchievements = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.map((record: any) => (
+                  {filteredRecords.map((record: any, index: number) => (
                     <TableRow key={record._id || record.id}>
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                       <TableCell>{record.facultyId?.name || 'N/A'}</TableCell>
                       <TableCell>{record.title}</TableCell>
                       <TableCell>
@@ -178,9 +182,20 @@ const AdminAchievements = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}${record.certificate}`, '_blank')}
+                              title="Download Certificate"
+                              onClick={() => handleFileDownload(record.certificate, `Achievement_Certificate_${record.title.replace(/\s+/g, '_')}`)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {record.supportingDocument && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Download Document"
+                              onClick={() => handleFileDownload(record.supportingDocument, `Achievement_Doc_${record.title.replace(/\s+/g, '_')}`)}
+                            >
+                              <FileText className="h-4 w-4" />
                             </Button>
                           )}
                           {record.status === 'pending' && (

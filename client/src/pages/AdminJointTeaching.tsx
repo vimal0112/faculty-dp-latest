@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Search } from 'lucide-react';
+import { FileSpreadsheet, FileText, Search, Eye, Download, CheckCircle, XCircle } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { RecordDetailsModal } from '@/components/RecordDetailsModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,16 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { adminAPI } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const AdminJointTeaching = () => {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -128,6 +133,7 @@ const AdminJointTeaching = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[80px]">S.No</TableHead>
                   <TableHead>Faculty Name</TableHead>
                   <TableHead>Course Name</TableHead>
                   <TableHead>Course Code</TableHead>
@@ -140,19 +146,20 @@ const AdminJointTeaching = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No records found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRecords.map((record: any) => (
+                  filteredRecords.map((record: any, index: number) => (
                     <TableRow key={record._id || record.id}>
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                       <TableCell className="font-medium">
                         {record.facultyId?.name || (record.facultyId?._id || record.facultyId || 'N/A').toString().substring(0, 8)}
                       </TableCell>
@@ -160,7 +167,7 @@ const AdminJointTeaching = () => {
                       <TableCell>
                         <Badge variant="secondary">{record.courseCode}</Badge>
                       </TableCell>
-                      <TableCell>{record.facultyInvolved}</TableCell>
+                      <TableCell>{record.facultyWithinCollege || record.facultyInvolved || 'N/A'}</TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -182,9 +189,19 @@ const AdminJointTeaching = () => {
                               setIsViewModalOpen(true);
                             }}
                           >
+                            <Eye className="h-4 w-4 mr-1" />
                             View
                           </Button>
-                          {record.status === 'pending' && (
+                          {record.certificate && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleFileDownload(record.certificate, `Joint_Teaching_Certificate_${record.courseName.replace(/\s+/g, '_')}`)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {(record.status === 'pending' || !record.status) && (
                             <>
                               <Button
                                 size="sm"
@@ -193,12 +210,15 @@ const AdminJointTeaching = () => {
                                 onClick={async () => {
                                   try {
                                     await adminAPI.updateJointTeachingStatus(record._id || record.id, 'approved');
+                                    toast({ title: 'Approved', description: `Joint Teaching for "${record.courseName}" has been approved.` });
                                     loadRecords();
                                   } catch (error) {
+                                    toast({ title: 'Error approving record', variant: 'destructive' });
                                     console.error('Failed to approve:', error);
                                   }
                                 }}
                               >
+                                <CheckCircle className="h-4 w-4 mr-1" />
                                 Approve
                               </Button>
                               <Button
@@ -207,12 +227,15 @@ const AdminJointTeaching = () => {
                                 onClick={async () => {
                                   try {
                                     await adminAPI.updateJointTeachingStatus(record._id || record.id, 'rejected');
+                                    toast({ title: 'Rejected', description: `Joint Teaching for "${record.courseName}" has been rejected.`, variant: 'destructive' });
                                     loadRecords();
                                   } catch (error) {
+                                    toast({ title: 'Error rejecting record', variant: 'destructive' });
                                     console.error('Failed to reject:', error);
                                   }
                                 }}
                               >
+                                <XCircle className="h-4 w-4 mr-1" />
                                 Reject
                               </Button>
                             </>

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, FileText, Calendar, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Calendar, Upload, Eye, Download } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdjunctFaculty } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { facultyAPI } from '@/lib/api';
+import { formatDurationGlobal } from '@/lib/utils';
 
 const FacultyAdjunctFaculty = () => {
   const { user } = useAuth();
@@ -18,11 +21,22 @@ const FacultyAdjunctFaculty = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AdjunctFaculty | null>(null);
   const [durationDisplay, setDurationDisplay] = useState<{ value: number; type: 'days' | 'weeks' } | null>(null);
+  const [fromDate, setFromDate] = useState<string>('');
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
   }, []);
+
+  useEffect(() => {
+    if (editingRecord?.fromDate) {
+      setFromDate(new Date(editingRecord.fromDate).toISOString().split('T')[0]);
+    } else {
+      setFromDate('');
+    }
+  }, [editingRecord]);
 
   const loadRecords = async () => {
     try {
@@ -54,7 +68,7 @@ const FacultyAdjunctFaculty = () => {
     const end = new Date(toDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays > 6) {
       const weeks = Math.ceil(diffDays / 7);
       return { value: weeks, type: 'weeks' as const };
@@ -81,11 +95,11 @@ const FacultyAdjunctFaculty = () => {
     if (fromDate && toDate) {
       const from = new Date(fromDate);
       const to = new Date(toDate);
-      
+
       if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
         const diffTime = Math.abs(to.getTime() - from.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         let duration, durationType;
         if (diffDays > 6) {
           duration = Math.ceil(diffDays / 7);
@@ -94,7 +108,7 @@ const FacultyAdjunctFaculty = () => {
           duration = diffDays;
           durationType = 'days' as const;
         }
-        
+
         setDurationDisplay({ value: duration, type: durationType });
       } else {
         setDurationDisplay(null);
@@ -113,10 +127,10 @@ const FacultyAdjunctFaculty = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (!validateFileFormat(file)) {
-        toast({ 
-          title: 'Invalid file format', 
+        toast({
+          title: 'Invalid file format',
           description: 'Please upload jpg, jpeg, png, docx, or pdf files only',
-          variant: 'destructive' 
+          variant: 'destructive'
         });
         e.target.value = '';
         return;
@@ -127,66 +141,66 @@ const FacultyAdjunctFaculty = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Check if user is authenticated
     if (!user?.id) {
-      toast({ 
-        title: 'Authentication required', 
+      toast({
+        title: 'Authentication required',
         description: 'Please log in to add records',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
       return;
     }
-    
+
     const formData = new FormData(e.currentTarget);
-    
+
     if (!certificateFile && !editingRecord) {
-      toast({ 
-        title: 'Certificate required', 
+      toast({
+        title: 'Certificate required',
         description: 'Please upload a certificate file',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
       return;
     }
-    
+
     const fromDate = formData.get('fromDate') as string;
     const toDate = formData.get('toDate') as string;
-    
+
     if (!fromDate || !toDate) {
-      toast({ 
-        title: 'Date range required', 
+      toast({
+        title: 'Date range required',
         description: 'Please select both from and to dates',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
       return;
     }
-    
+
     // Validate date format and create proper Date objects
     const from = new Date(fromDate);
     const to = new Date(toDate);
-    
+
     if (isNaN(from.getTime()) || isNaN(to.getTime())) {
-      toast({ 
-        title: 'Invalid date format', 
+      toast({
+        title: 'Invalid date format',
         description: 'Please select valid dates',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
       return;
     }
-    
+
     if (to < from) {
-      toast({ 
-        title: 'Invalid date range', 
+      toast({
+        title: 'Invalid date range',
         description: 'To date must be after from date',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
       return;
     }
-    
+
     // Calculate duration
     const diffTime = Math.abs(to.getTime() - from.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     let duration, durationType;
     if (diffDays > 6) {
       duration = Math.ceil(diffDays / 7);
@@ -195,7 +209,7 @@ const FacultyAdjunctFaculty = () => {
       duration = diffDays;
       durationType = 'days' as const;
     }
-    
+
     try {
       if (editingRecord) {
         const updateData = {
@@ -208,13 +222,13 @@ const FacultyAdjunctFaculty = () => {
           durationType,
           certificate: formData.get('existingCertificate') as string,
         };
-        
+
         if (certificateFile) {
           await facultyAPI.updateAdjunctFaculty(editingRecord.id, { ...updateData, certificate: certificateFile });
         } else {
           await facultyAPI.updateAdjunctFaculty(editingRecord.id, updateData);
         }
-        
+
         toast({ title: 'Adjunct faculty updated successfully' });
       } else {
         const createData = {
@@ -243,10 +257,10 @@ const FacultyAdjunctFaculty = () => {
       if (error.response) {
         console.error('Server response:', error.response.data);
       }
-      toast({ 
-        title: 'Failed to save record', 
+      toast({
+        title: 'Failed to save record',
         description: error.message || 'Please check your input and try again',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
     }
   };
@@ -289,7 +303,16 @@ const FacultyAdjunctFaculty = () => {
               </div>
               <div>
                 <Label htmlFor="department">Department</Label>
-                <Input id="department" name="department" defaultValue={editingRecord?.department} required />
+                <Select name="department" defaultValue={editingRecord?.department} required>
+                  <SelectTrigger id="department">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['AI-DS', 'AI', 'Arch', 'CE (Civil)', 'CSE', 'CSBS', 'DS', 'IT', 'ECE', 'EEE', 'MCA', 'MECH', 'MTE (Mechatronics)'].map((dept) => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="courseCode">Course Code</Label>
@@ -298,13 +321,14 @@ const FacultyAdjunctFaculty = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="fromDate">From Date</Label>
-                  <Input 
-                    id="fromDate" 
-                    name="fromDate" 
-                    type="date" 
-                    defaultValue={editingRecord?.fromDate ? new Date(editingRecord.fromDate).toISOString().split('T')[0] : ''}
-                    required 
+                  <Input
+                    id="fromDate"
+                    name="fromDate"
+                    type="date"
+                    value={fromDate}
+                    required
                     onChange={(e) => {
+                      setFromDate(e.target.value);
                       const toDate = (e.currentTarget.form?.elements.namedItem('toDate') as HTMLInputElement)?.value;
                       handleDateChange(e.target.value, toDate);
                     }}
@@ -312,14 +336,14 @@ const FacultyAdjunctFaculty = () => {
                 </div>
                 <div>
                   <Label htmlFor="toDate">To Date</Label>
-                  <Input 
-                    id="toDate" 
-                    name="toDate" 
-                    type="date" 
+                  <Input
+                    id="toDate"
+                    name="toDate"
+                    type="date"
+                    min={fromDate}
                     defaultValue={editingRecord?.toDate ? new Date(editingRecord.toDate).toISOString().split('T')[0] : ''}
-                    required 
+                    required
                     onChange={(e) => {
-                      const fromDate = (e.currentTarget.form?.elements.namedItem('fromDate') as HTMLInputElement)?.value;
                       handleDateChange(fromDate, e.target.value);
                     }}
                   />
@@ -337,10 +361,10 @@ const FacultyAdjunctFaculty = () => {
               )}
               <div>
                 <Label htmlFor="certificate">Certificate *</Label>
-                <Input 
-                  id="certificate" 
-                  name="certificate" 
-                  type="file" 
+                <Input
+                  id="certificate"
+                  name="certificate"
+                  type="file"
                   accept=".jpg,.jpeg,.png,.docx,.pdf"
                   onChange={handleFileChange}
                   required={!editingRecord}
@@ -367,69 +391,95 @@ const FacultyAdjunctFaculty = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {records.map((adj) => (
-          <Card key={adj.id}>
-            <CardHeader>
-              <CardTitle>{adj.facultyName}</CardTitle>
-              <CardDescription>{adj.department}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Course Code: </span>
-                  <span className="font-medium">{adj.courseCode}</span>
-                </div>
-                {adj.fromDate && adj.toDate && (
+            <Card key={adj.id}>
+              <CardHeader>
+                <CardTitle>{adj.facultyName}</CardTitle>
+                <CardDescription>{adj.department}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Duration: </span>
-                    <span className="font-medium">
-                      {new Date(adj.fromDate).toLocaleDateString()} - {new Date(adj.toDate).toLocaleDateString()}
-                    </span>
-                    <div className="text-xs text-blue-600 mt-1">
-                      {adj.duration} {adj.durationType}
+                    <span className="text-muted-foreground">Course Code: </span>
+                    <span className="font-medium">{adj.courseCode}</span>
+                  </div>
+                  {adj.fromDate && adj.toDate && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Duration: </span>
+                      <span className="font-medium">
+                        {new Date(adj.fromDate).toLocaleDateString()} - {new Date(adj.toDate).toLocaleDateString()}
+                      </span>
+                      <div className="text-xs text-blue-600 mt-1">
+                        {formatDurationGlobal(adj.fromDate, adj.toDate)}
+                      </div>
                     </div>
+                  )}
+                  {adj.certificate && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <FileText className="h-4 w-4" />
+                        Certificate: {adj.certificate.split('/').pop()}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-primary hover:text-primary/80 px-2"
+                        asChild
+                      >
+                        <a
+                          href={`${cleanBaseUrl}${adj.certificate}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          View
+                        </a>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-primary hover:text-primary/80 px-2 flex items-center gap-1"
+                        onClick={() => handleFileDownload(adj.certificate, `Adjunct_Faculty_Certificate_${adj.facultyName.replace(/\s+/g, '_')}`)}
+                      >
+                        <Download className="h-3 w-3" />
+                        Download
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Status:</span>
+                    <span className={`text-sm font-medium px-2 py-1 rounded-full text-xs ${adj.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      adj.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                      {adj.status?.toUpperCase() || 'PENDING'}
+                    </span>
                   </div>
-                )}
-                {adj.certificate && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <FileText className="h-4 w-4" />
-                    Certificate: {adj.certificate}
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingRecord(adj);
+                        setIsDialogOpen(true);
+                        if (adj.fromDate && adj.toDate) {
+                          handleDateChange(adj.fromDate, adj.toDate);
+                        }
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(adj.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Status:</span>
-                  <span className={`text-sm font-medium px-2 py-1 rounded-full text-xs ${
-                    adj.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    adj.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {adj.status?.toUpperCase() || 'PENDING'}
-                  </span>
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingRecord(adj);
-                      setIsDialogOpen(true);
-                      if (adj.fromDate && adj.toDate) {
-                        handleDateChange(adj.fromDate, adj.toDate);
-                      }
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDelete(adj.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

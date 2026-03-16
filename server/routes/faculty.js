@@ -15,6 +15,7 @@ const Achievement = require('../models/Achievement');
 const Internship = require('../models/Internship');
 const UpcomingEvent = require('../models/UpcomingEvent');
 const SystemSettings = require('../models/SystemSettings');
+const User = require('../models/User');
 
 // Middleware to conditionally auto-approve activities
 const checkAutoApprove = async (req, res, next) => {
@@ -554,6 +555,23 @@ router.post('/joint-teaching', getFacultyId, upload.single('certificate'), check
 
     const record = new JointTeaching(recordData);
     await record.save();
+
+    // Notify all admins
+    try {
+      const admins = await User.find({ role: 'admin' });
+      const faculty = await User.findById(req.facultyId);
+      for (const admin of admins) {
+        await Notification.create({
+          recipientId: admin._id,
+          sender: 'Faculty System',
+          message: `New Joint Teaching record added by ${faculty ? faculty.name : 'a faculty member'} and needs your approval.`,
+          type: 'info'
+        });
+      }
+    } catch (notifError) {
+      console.error('Error creating admin notifications for Joint Teaching:', notifError);
+    }
+
     res.status(201).json(record);
   } catch (error) {
     if (req.file) {
@@ -828,18 +846,21 @@ router.delete('/notifications/:id', getFacultyId, async (req, res) => {
 // ========== Dashboard Stats ==========
 router.get('/dashboard', getFacultyId, async (req, res) => {
   try {
-    const [fdpAttended, fdpOrganized, seminars, abl, jointTeaching, adjunct] = await Promise.all([
+    const [
+      fdpAttended, fdpOrganized, seminars, abl, jointTeaching, adjunct,
+      reimbursements, achievements, internships, upcomingEvents
+    ] = await Promise.all([
       FDPAttended.countDocuments({ facultyId: req.facultyId }),
       FDPOrganized.countDocuments({ facultyId: req.facultyId }),
       Seminar.countDocuments({ facultyId: req.facultyId }),
       ABL.countDocuments({ facultyId: req.facultyId }),
       JointTeaching.countDocuments({ facultyId: req.facultyId }),
       AdjunctFaculty.countDocuments({ facultyId: req.facultyId }),
+      FDPReimbursement.countDocuments({ facultyId: req.facultyId }),
+      Achievement.countDocuments({ facultyId: req.facultyId }),
+      Internship.countDocuments({ facultyId: req.facultyId }),
+      UpcomingEvent.countDocuments({ facultyId: req.facultyId }),
     ]);
-
-    const recentFDPs = await FDPAttended.find({ facultyId: req.facultyId })
-      .sort({ createdAt: -1 })
-      .limit(3);
 
     res.json({
       stats: {
@@ -849,8 +870,11 @@ router.get('/dashboard', getFacultyId, async (req, res) => {
         abl,
         jointTeaching,
         adjunct,
-      },
-      recentFDPs,
+        reimbursements,
+        achievements,
+        internships,
+        upcomingEvents
+      }
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -897,11 +921,21 @@ router.post('/reimbursements', getFacultyId, upload.single('receiptDocument'), c
     }
 
     const recordData = {
-      ...req.body,
+      fdpId: req.body.fdpId,
+      fdpTitle: req.body.fdpTitle,
       facultyId: req.facultyId,
       amount: amountNum,
-      expenseType: expenseType === 'other' ? otherExpenseType : expenseType,
+      currency: req.body.currency || 'INR',
+      expenseType: expenseType,
+      description: req.body.description,
       receiptDocument: `/uploads/certificates/${req.file.filename}`,
+      bankDetails: {
+        accountNumber: req.body.accountNumber,
+        ifscCode: req.body.ifscCode,
+        bankName: req.body.bankName,
+        accountHolderName: req.body.accountHolderName,
+        bankBranch: req.body.bankBranch,
+      },
     };
 
     const record = new FDPReimbursement(recordData);
@@ -923,13 +957,20 @@ router.put('/reimbursements/:id', getFacultyId, upload.single('receiptDocument')
       return res.status(404).json({ error: 'Record not found' });
     }
 
-    const { amount, expenseType, otherExpenseType, accountNumber } = req.body;
     const updateData = {
-      ...req.body,
       updatedAt: Date.now()
     };
 
+    if (req.body.fdpId) updateData.fdpId = req.body.fdpId;
+    if (req.body.fdpTitle) updateData.fdpTitle = req.body.fdpTitle;
+    if (req.body.currency) updateData.currency = req.body.currency;
+    if (req.body.expenseType) updateData.expenseType = req.body.expenseType;
+    if (req.body.description !== undefined) updateData.description = req.body.description;
+
     // Validate amount if provided
+    const amount = req.body.amount;
+    const accountNumber = req.body.accountNumber;
+
     if (amount !== undefined) {
       const amountNum = parseFloat(amount);
       if (isNaN(amountNum) || amountNum <= 0 || !Number.isInteger(amountNum)) {
@@ -945,10 +986,15 @@ router.put('/reimbursements/:id', getFacultyId, upload.single('receiptDocument')
       return res.status(400).json({ error: 'Account number must contain only numbers and be at least 10 digits long.' });
     }
 
-    // Validate other expense type if provided
-    if (expenseType === 'other' && (!otherExpenseType || !otherExpenseType.trim())) {
-      if (req.file) fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: 'Other expense type is required when "Other" is selected.' });
+    // Build bankDetails nested object from flat fields
+    if (accountNumber || req.body.ifscCode || req.body.bankName || req.body.accountHolderName || req.body.bankBranch) {
+      updateData.bankDetails = {
+        accountNumber: accountNumber || oldRecord.bankDetails?.accountNumber,
+        ifscCode: req.body.ifscCode || oldRecord.bankDetails?.ifscCode,
+        bankName: req.body.bankName || oldRecord.bankDetails?.bankName,
+        accountHolderName: req.body.accountHolderName || oldRecord.bankDetails?.accountHolderName,
+        bankBranch: req.body.bankBranch || oldRecord.bankDetails?.bankBranch,
+      };
     }
 
     // Handle receipt document upload
@@ -1233,6 +1279,23 @@ router.post('/internships', getFacultyId, upload.fields([
 
     const record = new Internship(recordData);
     await record.save();
+
+    // Notify all admins
+    try {
+      const admins = await User.find({ role: 'admin' });
+      const faculty = await User.findById(req.facultyId);
+      for (const admin of admins) {
+        await Notification.create({
+          recipientId: admin._id,
+          sender: 'Faculty System',
+          message: `New Internship record added by ${faculty ? faculty.name : 'a faculty member'} and needs your approval.`,
+          type: 'info'
+        });
+      }
+    } catch (notifError) {
+      console.error('Error creating admin notifications for Internship:', notifError);
+    }
+
     res.status(201).json(record);
   } catch (error) {
     if (req.files) {
@@ -1362,6 +1425,15 @@ router.delete('/internships/:id', getFacultyId, async (req, res) => {
 // ========== Upcoming Events Routes ==========
 router.get('/upcoming-events', getFacultyId, async (req, res) => {
   try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Auto-delete events whose start date is before today
+    await UpcomingEvent.deleteMany({
+      facultyId: req.facultyId,
+      startDate: { $lt: startOfToday }
+    });
+
     const records = await UpcomingEvent.find({ facultyId: req.facultyId })
       .sort({ startDate: 1, createdAt: -1 });
     res.json(records);

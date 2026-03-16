@@ -272,14 +272,16 @@ function Login() {
             {isSignup && (
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  type="text"
-                  placeholder="Enter your department"
-                  value={department}
-                  onChange={(e) => { setDepartment(e.target.value); clearErrors(); }}
-                  className={hasFieldError('department') ? 'border-destructive' : ''}
-                />
+                <Select value={department} onValueChange={(v) => { setDepartment(v); clearErrors(); }}>
+                  <SelectTrigger id="department" className={hasFieldError('department') ? 'border-destructive' : ''}>
+                    <SelectValue placeholder="Select your department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['AI-DS', 'AI', 'Arch', 'CE (Civil)', 'CSE', 'CSBS', 'DS', 'ECE', 'EEE', 'IT', 'MCA', 'MECH', 'MTE (Mechatronics)'].map((dept) => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {hasFieldError('department') && <p className="text-sm text-destructive">{getFieldError('department')}</p>}
               </div>
             )}

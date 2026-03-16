@@ -136,6 +136,7 @@ const HODFaculty = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[80px]">S.No</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Designation</TableHead>
@@ -149,19 +150,20 @@ const HODFaculty = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredFaculty.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
                       No faculty found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredFaculty.map((fac: any) => (
+                  filteredFaculty.map((fac: any, index: number) => (
                     <TableRow key={fac._id || fac.id}>
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                       <TableCell>{fac.name}</TableCell>
                       <TableCell>{fac.email}</TableCell>
                       <TableCell>

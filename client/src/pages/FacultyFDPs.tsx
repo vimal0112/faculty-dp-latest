@@ -11,6 +11,7 @@ import { FDP } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { facultyAPI } from '@/lib/api';
+import { formatDurationGlobal } from '@/lib/utils';
 import fdpPlaceholder from '@/assets/fdp-placeholder.jpg';
 
 const FacultyFDPs = () => {
@@ -31,14 +32,13 @@ const FacultyFDPs = () => {
         facultyAPI.getFDPAttended(),
         facultyAPI.getFDPOrganized(),
       ]);
-      
+
       // Combine both types into a unified FDP list
       const combined: FDP[] = [
         ...attended.map((item: any) => {
           const fromDate = item.fromDate ? new Date(item.fromDate).toISOString().split('T')[0] : '';
           const toDate = item.toDate ? new Date(item.toDate).toISOString().split('T')[0] : '';
-          const diffDays = fromDate && toDate ? Math.ceil((new Date(toDate).getTime() - new Date(fromDate).getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0;
-          const duration = diffDays > 6 ? `${Math.round(diffDays / 7)} week${Math.round(diffDays / 7) !== 1 ? 's' : ''}` : diffDays > 0 ? `${diffDays} day${diffDays !== 1 ? 's' : ''}` : (item.duration || '');
+          const duration = (fromDate && toDate) ? formatDurationGlobal(fromDate, toDate) : (item.duration || '');
           return {
             id: item._id || item.id,
             facultyId: item.facultyId?._id || item.facultyId || user?.id || '',
@@ -54,8 +54,7 @@ const FacultyFDPs = () => {
         ...organized.map((item: any) => {
           const fromDate = item.fromDate ? new Date(item.fromDate).toISOString().split('T')[0] : '';
           const toDate = item.toDate ? new Date(item.toDate).toISOString().split('T')[0] : '';
-          const diffDays = fromDate && toDate ? Math.ceil((new Date(toDate).getTime() - new Date(fromDate).getTime()) / (1000 * 60 * 60 * 24)) + 1 : 0;
-          const duration = diffDays > 6 ? `${Math.round(diffDays / 7)} week${Math.round(diffDays / 7) !== 1 ? 's' : ''}` : diffDays > 0 ? `${diffDays} day${diffDays !== 1 ? 's' : ''}` : (item.duration || '');
+          const duration = (fromDate && toDate) ? formatDurationGlobal(fromDate, toDate) : (item.duration || '');
           return {
             id: item._id || item.id,
             facultyId: item.facultyId?._id || item.facultyId || user?.id || '',
@@ -69,7 +68,7 @@ const FacultyFDPs = () => {
           };
         }),
       ];
-      
+
       setFdps(combined);
     } catch (error) {
       console.error('Failed to load FDPs:', error);
@@ -195,6 +194,7 @@ const FacultyFDPs = () => {
             id="endDate"
             type="date"
             value={formData.endDate}
+            min={formData.startDate}
             onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
             required
           />
@@ -277,83 +277,83 @@ const FacultyFDPs = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {fdps.map((fdp) => (
-          <Card key={fdp.id} className="overflow-hidden hover:shadow-hover transition-all">
-            <div className="h-40 overflow-hidden bg-gradient-hero">
-              <img
-                src={fdpPlaceholder}
-                alt={fdp.title}
-                className="w-full h-full object-cover opacity-80"
-              />
-            </div>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-lg line-clamp-2">{fdp.title}</CardTitle>
-                <Badge variant={fdp.status === 'approved' ? 'default' : fdp.status === 'pending' ? 'secondary' : 'destructive'}>
-                  {fdp.status}
-                </Badge>
+            <Card key={fdp.id} className="overflow-hidden hover:shadow-hover transition-all">
+              <div className="h-40 overflow-hidden bg-gradient-hero">
+                <img
+                  src={fdpPlaceholder}
+                  alt={fdp.title}
+                  className="w-full h-full object-cover opacity-80"
+                />
               </div>
-              <CardDescription className="flex items-center gap-1">
-                <Award className="h-3 w-3" />
-                {fdp.organizer}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>{fdp.startDate} to {fdp.endDate}</span>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg line-clamp-2">{fdp.title}</CardTitle>
+                  <Badge variant={fdp.status === 'approved' ? 'default' : fdp.status === 'pending' ? 'secondary' : 'destructive'}>
+                    {fdp.status}
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <FileText className="h-4 w-4" />
-                  <span>{fdp.duration}</span>
+                <CardDescription className="flex items-center gap-1">
+                  <Award className="h-3 w-3" />
+                  {fdp.organizer}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>{fdp.startDate} to {fdp.endDate}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <FileText className="h-4 w-4" />
+                    <span>{fdp.duration}</span>
+                  </div>
                 </div>
-              </div>
 
-              {fdp.certificate && (
-                <div className="pt-2 border-t">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <FileText className="h-3 w-3 mr-2" />
-                    View Certificate
+                {fdp.certificate && (
+                  <div className="pt-2 border-t">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <FileText className="h-3 w-3 mr-2" />
+                      View Certificate
+                    </Button>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Dialog open={editingFdp?.id === fdp.id} onOpenChange={(open) => !open && setEditingFdp(null)}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleEdit(fdp)}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Edit FDP</DialogTitle>
+                        <DialogDescription>
+                          Update your FDP details
+                        </DialogDescription>
+                      </DialogHeader>
+                      <FDPForm />
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(fdp.id)}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete
                   </Button>
                 </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <Dialog open={editingFdp?.id === fdp.id} onOpenChange={(open) => !open && setEditingFdp(null)}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleEdit(fdp)}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Edit FDP</DialogTitle>
-                      <DialogDescription>
-                        Update your FDP details
-                      </DialogDescription>
-                    </DialogHeader>
-                    <FDPForm />
-                  </DialogContent>
-                </Dialog>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(fdp.id)}
-                >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

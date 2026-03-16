@@ -228,6 +228,7 @@ router.put('/abl/:id/status', checkAdmin, async (req, res) => {
     // Create notification for faculty
     await Notification.create({
       recipientId: record.facultyId._id,
+      sender: 'Admin',
       message: `Your ABL report for ${record.subjectName} has been ${status}`,
       type: status === 'approved' ? 'success' : 'warning',
     });
@@ -680,12 +681,10 @@ router.put('/internships/:id/status', checkAdmin, async (req, res) => {
 
     // Create notification for faculty
     await Notification.create({
-      userId: record.facultyId._id,
-      type: 'internship',
-      title: `Internship ${status}`,
-      message: `Your internship record for ${record.studentName} has been ${status}`, // Note: record.studentName now holds Faculty Name
-      relatedId: record._id,
-      relatedModel: 'Internship'
+      recipientId: record.facultyId._id,
+      sender: 'Admin',
+      message: `Your internship record has been ${status}`,
+      type: status === 'approved' ? 'success' : 'info'
     });
 
     res.json(record);

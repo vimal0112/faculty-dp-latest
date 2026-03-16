@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, FileText, Calendar, MapPin, Eye, Upload, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Calendar, MapPin, Eye, Upload, CheckCircle, XCircle, Clock, Download } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ const FacultySeminars = () => {
   const [editingSeminar, setEditingSeminar] = useState<Seminar | null>(null);
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadSeminars();
@@ -68,35 +70,35 @@ const FacultySeminars = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Check if user is authenticated
     if (!user?.id) {
       toast.error('Authentication required. Please log in to add records');
       return;
     }
-    
+
     const formData = new FormData(e.currentTarget);
     const certificateFile = (formData.get('certificate') as File);
     const attendeesCount = parseInt(formData.get('attendees') as string) || 0;
-    
+
     // Validate attendees count
     if (attendeesCount <= 0) {
       toast.error('Attendees count must be greater than zero');
       return;
     }
-    
+
     // Validate certificate for new records
     if (!certificateFile && !editingSeminar) {
       toast.error('Certificate is required. Please upload a certificate file');
       return;
     }
-    
+
     // Validate certificate for new uploads
     if (certificateFile && certificateFile.size > 0 && !validateFileFormat(certificateFile)) {
       toast.error('Invalid file format. Please upload jpg, jpeg, png, docx, or pdf files only');
       return;
     }
-    
+
     const data: any = {
       title: formData.get('title') as string,
       topic: formData.get('topic') as string,
@@ -328,25 +330,35 @@ const FacultySeminars = () => {
                     )}
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">Status:</span>
-                      <span className={`text-sm font-medium px-2 py-1 rounded-full text-xs ${
-                        seminar.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        seminar.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`text-sm font-medium px-2 py-1 rounded-full text-xs ${seminar.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          seminar.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {seminar.status?.toUpperCase() || 'PENDING'}
                       </span>
                     </div>
                     {seminar.certificate && (
-                      <div className="pt-2">
-                        <a
-                          href={`${API_BASE_URL.replace('/api', '')}${seminar.certificate}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-sm text-primary hover:underline"
+                      <div className="flex gap-2 pt-2">
+                        <Button variant="ghost" size="sm" className="h-7 text-primary hover:text-primary/80 px-2" asChild>
+                          <a
+                            href={`${cleanBaseUrl}${seminar.certificate}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-primary hover:text-primary/80 px-2 flex items-center gap-1"
+                          onClick={() => handleFileDownload(seminar.certificate, `Seminar_Certificate_${seminar.title.replace(/\s+/g, '_')}`)}
                         >
-                          <Eye className="h-4 w-4" />
-                          View Certificate
-                        </a>
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
                       </div>
                     )}
                   </CardContent>

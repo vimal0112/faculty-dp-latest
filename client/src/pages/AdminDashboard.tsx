@@ -127,11 +127,11 @@ const AdminDashboard = () => {
           title="Total Internships"
           value={stats.totalInternships}
           icon={Briefcase}
-          description="Student supervision"
+          description="Faculty interns"
         />
       </div>
 
-      
+
     </div>
   );
 };

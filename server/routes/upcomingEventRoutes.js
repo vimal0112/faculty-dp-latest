@@ -21,6 +21,15 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "facultyId required" });
     }
 
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Auto-delete events whose start date is before today
+    await UpcomingEvent.deleteMany({
+      facultyId,
+      startDate: { $lt: startOfToday }
+    });
+
     const events = await UpcomingEvent.find({ facultyId }).sort({ startDate: 1 });
     res.json(events);
   } catch (err) {

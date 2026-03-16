@@ -74,7 +74,12 @@ export interface AdjunctFaculty {
   facultyName: string;
   department: string;
   courseCode: string;
-  supportingDocs?: string;
+  fromDate: string;
+  toDate: string;
+  duration: number;
+  durationType: 'days' | 'weeks';
+  certificate: string;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 export interface JointTeaching {
@@ -166,22 +171,20 @@ export interface Achievement {
 export interface Internship {
   id: string;
   facultyId: string;
+  regNo: string;
   studentName: string;
-  studentEmail?: string;
-  studentRollNo?: string;
   companyName: string;
   companyAddress?: string;
-  position: string;
+  mode: 'online' | 'offline' | 'hybrid';
   startDate: string;
   endDate: string;
   duration?: number;
+  durationUnit?: 'days' | 'weeks';
   stipend?: number;
   description?: string;
   skillsGained?: string[];
   projectTitle?: string;
-  supervisorName?: string;
-  status: 'ongoing' | 'completed' | 'terminated';
-  certificate?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'ongoing' | 'completed';
+  certificate: string;
   report?: string;
-  feedback?: string;
 }

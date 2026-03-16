@@ -162,6 +162,7 @@ const AdminReimbursements = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[80px]">S.No</TableHead>
                     <TableHead>Faculty</TableHead>
                     <TableHead>FDP Title</TableHead>
                     <TableHead>Amount</TableHead>
@@ -172,8 +173,9 @@ const AdminReimbursements = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.map((record: any) => (
+                  {filteredRecords.map((record: any, index: number) => (
                     <TableRow key={record._id || record.id}>
+                      <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                       <TableCell>{record.facultyId?.name || 'N/A'}</TableCell>
                       <TableCell>{record.fdpTitle}</TableCell>
                       <TableCell>

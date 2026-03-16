@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, FileText, Download, Eye } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,19 +12,8 @@ import { FDPAttended } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { facultyAPI } from '@/lib/api';
+import { formatDurationGlobal } from '@/lib/utils';
 
-// Format duration: >6 days show weeks, otherwise days
-function formatDuration(fromDate: string, toDate: string): string {
-  const from = new Date(fromDate);
-  const to = new Date(toDate);
-  const diffTime = to.getTime() - from.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-  if (diffDays > 6) {
-    const weeks = Math.round(diffDays / 7);
-    return `${weeks} week${weeks !== 1 ? 's' : ''}`;
-  }
-  return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
-}
 
 const FacultyFDPAttended = () => {
   const { user } = useAuth();
@@ -38,12 +28,14 @@ const FacultyFDPAttended = () => {
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
   const calculatedDuration = fromDate && toDate && new Date(toDate) >= new Date(fromDate)
-    ? formatDuration(fromDate, toDate)
+    ? formatDurationGlobal(fromDate, toDate)
     : '';
 
   useEffect(() => {
     loadRecords();
   }, []);
+
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     if (isDialogOpen) {
@@ -59,7 +51,7 @@ const FacultyFDPAttended = () => {
       setRecords(data.map((item: any) => {
         const fromDate = item.fromDate ? new Date(item.fromDate).toISOString().split('T')[0] : undefined;
         const toDate = item.toDate ? new Date(item.toDate).toISOString().split('T')[0] : undefined;
-        const duration = (fromDate && toDate) ? formatDuration(fromDate, toDate) : (item.duration || '-');
+        const duration = (fromDate && toDate) ? formatDurationGlobal(fromDate, toDate) : (item.duration || '-');
         return {
           id: item._id || item.id,
           facultyId: item.facultyId?._id || item.facultyId || user?.id || '',
@@ -137,7 +129,7 @@ const FacultyFDPAttended = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this FDP record?')) return;
-    
+
     try {
       await facultyAPI.deleteFDPAttended(id);
       toast({ title: 'FDP deleted successfully', variant: 'destructive' });
@@ -207,6 +199,7 @@ const FacultyFDPAttended = () => {
                     name="toDate"
                     type="date"
                     value={toDate}
+                    min={fromDate} // Enforce toDate >= fromDate
                     onChange={(e) => setToDate(e.target.value)}
                     required
                   />
@@ -258,73 +251,86 @@ const FacultyFDPAttended = () => {
       ) : (
         <div className="grid gap-4">
           {records.map((fdp) => (
-          <Card key={fdp.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle>{fdp.title}</CardTitle>
-                  <CardDescription>
-                    {fdp.venue} • {fdp.duration}
-                  </CardDescription>
+            <Card key={fdp.id}>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle>{fdp.title}</CardTitle>
+                    <CardDescription>
+                      {fdp.venue} • {fdp.duration}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={fdp.status === 'approved' ? 'default' : 'secondary'}>
+                      {fdp.status}
+                    </Badge>
+                    <Badge variant="outline">{fdp.mode}</Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={fdp.status === 'approved' ? 'default' : 'secondary'}>
-                    {fdp.status}
-                  </Badge>
-                  <Badge variant="outline">{fdp.mode}</Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  {fdp.reportUpload && (
-                    <div className="flex items-center gap-1">
-                      <FileText className="h-4 w-4" />
-                      Report
-                    </div>
-                  )}
-                  {fdp.proofDoc && (
-                    <div className="flex items-center gap-1">
-                      <FileText className="h-4 w-4" />
-                      Proof Doc
-                    </div>
-                  )}
-                  {fdp.certificate && (
-                    <a
-                      href={`${API_BASE_URL.replace('/api', '')}${fdp.certificate}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-primary hover:underline"
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {fdp.reportUpload && (
+                      <div className="flex items-center gap-1">
+                        <FileText className="h-4 w-4" />
+                        Report
+                      </div>
+                    )}
+                    {fdp.proofDoc && (
+                      <div className="flex items-center gap-1">
+                        <FileText className="h-4 w-4" />
+                        Proof Doc
+                      </div>
+                    )}
+                    {fdp.certificate && (
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" className="h-7 text-primary hover:text-primary/80 px-2" asChild>
+                          <a
+                            href={`${cleanBaseUrl}${fdp.certificate}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-primary hover:text-primary/80 px-2 flex items-center gap-1"
+                          onClick={() => handleFileDownload(fdp.certificate, `FDP_Certificate_${fdp.title.replace(/\s+/g, '_')}`)}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingRecord(fdp);
+                        setMode(fdp.mode as 'online' | 'offline' | 'hybrid');
+                        setIsDialogOpen(true);
+                      }}
                     >
-                      <Eye className="h-4 w-4" />
-                      View Certificate
-                    </a>
-                  )}
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(fdp.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingRecord(fdp);
-                      setMode(fdp.mode as 'online' | 'offline' | 'hybrid');
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDelete(fdp.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
