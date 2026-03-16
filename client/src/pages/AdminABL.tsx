@@ -179,7 +179,6 @@ const AdminABL = () => {
                   <TableHead>Subject</TableHead>
                   <TableHead>Course Code</TableHead>
                   <TableHead>Industry Connect</TableHead>
-                  <TableHead>Certificate</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -187,13 +186,13 @@ const AdminABL = () => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       No records found
                     </TableCell>
                   </TableRow>
@@ -210,26 +209,16 @@ const AdminABL = () => {
                       </TableCell>
                       <TableCell>{record.industryConnect}</TableCell>
                       <TableCell>
-                        {record.certificate ? (
-                          <div className="flex items-center gap-1">
-                            <FileText className="h-4 w-4" />
-                            <span className="text-sm truncate max-w-20">{record.certificate}</span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
                         {getStatusBadge(record.status)}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          {record.certificate && (
+                          {(record.certificate || record.proofDoc) && (
                             <>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(`${cleanBaseUrl}${record.certificate}`, '_blank')}
+                                onClick={() => window.open(`${cleanBaseUrl}${record.certificate || record.proofDoc}`, '_blank')}
                                 title="View Certificate"
                               >
                                 <Eye className="h-4 w-4" />
@@ -237,7 +226,7 @@ const AdminABL = () => {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleFileDownload(record.certificate, `ABL_Certificate_${record.subjectName.replace(/\s+/g, '_')}`)}
+                                onClick={() => handleFileDownload(record.certificate || record.proofDoc, `ABL_Certificate_${record.subjectName.replace(/\s+/g, '_')}`)}
                                 title="Download Certificate"
                               >
                                 <Download className="h-4 w-4" />
