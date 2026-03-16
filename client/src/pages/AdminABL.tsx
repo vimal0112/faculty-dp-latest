@@ -224,25 +224,25 @@ const AdminABL = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedRecord(record);
-                              setIsViewModalOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
                           {record.certificate && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleFileDownload(record.certificate, `ABL_Certificate_${record.subjectName.replace(/\s+/g, '_')}`)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`${cleanBaseUrl}${record.certificate}`, '_blank')}
+                                title="View Certificate"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFileDownload(record.certificate, `ABL_Certificate_${record.subjectName.replace(/\s+/g, '_')}`)}
+                                title="Download Certificate"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           {record.status !== 'approved' && (
                             <Button

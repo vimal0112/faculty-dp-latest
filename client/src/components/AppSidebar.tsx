@@ -42,16 +42,16 @@ export const AppSidebar = () => {
 
   const facultyLinks = [
     { title: 'Dashboard', url: '/faculty', icon: Home },
-    { 
-      title: 'My FDP', 
+    {
+      title: 'My FDP',
       icon: Award,
       subItems: [
         { title: 'Attended FDPs', url: '/faculty/fdp/attended', icon: Award },
         { title: 'Organized FDPs', url: '/faculty/fdp/organized', icon: Award },
       ]
     },
-    { 
-      title: 'Teaching & Learning', 
+    {
+      title: 'Teaching & Learning',
       icon: BookOpen,
       subItems: [
         { title: 'ABL Reports', url: '/faculty/abl', icon: FileText },
@@ -70,8 +70,8 @@ export const AppSidebar = () => {
   const adminLinks = [
     { title: 'Dashboard', url: '/admin', icon: Home },
     { title: 'Faculty Profiles', url: '/admin/faculty', icon: Users },
-    { 
-      title: 'FDP Records', 
+    {
+      title: 'FDP Records',
       icon: Award,
       subItems: [
         { title: 'FDP Attended', url: '/admin/fdp/attended', icon: Award },
@@ -79,8 +79,8 @@ export const AppSidebar = () => {
       ]
     },
     { title: 'Seminars', url: '/admin/seminars', icon: GraduationCap },
-    { 
-      title: 'Teaching Records', 
+    {
+      title: 'Teaching Records',
       icon: BookOpen,
       subItems: [
         { title: 'ABL Reports', url: '/admin/abl', icon: FileText },
@@ -93,6 +93,7 @@ export const AppSidebar = () => {
     { title: 'Internships', url: '/admin/internships', icon: Briefcase },
     { title: 'Audit & Reports', url: '/admin/audit', icon: FileCheck },
     { title: 'Notifications', url: '/admin/notifications', icon: Bell },
+    { title: 'Control', url: '/admin/control', icon: UsersRound },
     { title: 'Settings', url: '/admin/settings', icon: Settings },
   ];
 
@@ -130,9 +131,9 @@ export const AppSidebar = () => {
             <SidebarMenu>
               {links.map((item) => {
                 if ('subItems' in item) {
-                  const shouldOpen = item.title === 'Teaching & Learning' || 
-                    (location.pathname.startsWith('/faculty') && 
-                     item.subItems.some(subItem => location.pathname === subItem.url));
+                  const shouldOpen = item.title === 'Teaching & Learning' ||
+                    (location.pathname.startsWith('/faculty') &&
+                      item.subItems.some(subItem => location.pathname === subItem.url));
                   return (
                     <Collapsible key={item.title} defaultOpen={shouldOpen} className="group/collapsible">
                       <SidebarMenuItem>

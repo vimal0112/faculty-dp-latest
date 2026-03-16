@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Search, Check, X, DollarSign, Eye } from 'lucide-react';
+import { FileSpreadsheet, FileText, Search, Check, X, DollarSign, Eye, Download } from 'lucide-react';
+import { handleFileDownload } from '@/lib/downloadUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ const AdminReimbursements = () => {
   const [reviewComments, setReviewComments] = useState('');
   const { toast } = useToast();
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const cleanBaseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '');
 
   useEffect(() => {
     loadRecords();
@@ -191,21 +193,34 @@ const AdminReimbursements = () => {
                       <TableCell>
                         <div className="flex gap-2">
                           {record.receiptDocument && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`${cleanBaseUrl}${record.receiptDocument}`, '_blank')}
+                                title="View Receipt"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFileDownload(record.receiptDocument, `Reimbursement_Receipt_${record.fdpTitle.replace(/\s+/g, '_')}`)}
+                                title="Download Receipt"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {record.status === 'pending' && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}${record.receiptDocument}`, '_blank')}
+                              onClick={() => setReviewDialog({ open: true, record })}
                             >
-                              <Eye className="h-4 w-4" />
+                              Review
                             </Button>
                           )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setReviewDialog({ open: true, record })}
-                          >
-                            {record.status === 'pending' ? 'Review' : 'View'}
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

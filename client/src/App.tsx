@@ -28,6 +28,7 @@ const AdminABL = lazy(() => import("./pages/AdminABL"));
 const AdminAdjunctFaculty = lazy(() => import("./pages/AdminAdjunctFaculty"));
 const AdminJointTeaching = lazy(() => import("./pages/AdminJointTeaching"));
 const AdminNotifications = lazy(() => import("./pages/AdminNotifications"));
+const AdminControl = lazy(() => import("./pages/AdminControl"));
 const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 const HODDashboard = lazy(() => import("./pages/HODDashboard"));
 const HODFaculty = lazy(() => import("./pages/HODFaculty"));
@@ -41,6 +42,7 @@ const AdminReimbursements = lazy(() => import("./pages/AdminReimbursements"));
 const AdminAchievements = lazy(() => import("./pages/AdminAchievements"));
 const AdminInternships = lazy(() => import("./pages/AdminInternships"));
 const AuditReports = lazy(() => import("./pages/AuditReports"));
+const FacultyFiltration = lazy(() => import("./pages/FacultyFiltration"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -235,6 +237,14 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="/admin/control"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminControl />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/admin/settings"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
@@ -271,6 +281,14 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
                       <AuditReports />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/faculty-filtration"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <FacultyFiltration />
                     </ProtectedRoute>
                   }
                 />
@@ -319,6 +337,14 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['hod']}>
                       <AuditReports />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/hod/faculty-filtration"
+                  element={
+                    <ProtectedRoute allowedRoles={['hod']}>
+                      <FacultyFiltration />
                     </ProtectedRoute>
                   }
                 />

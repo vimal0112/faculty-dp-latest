@@ -205,93 +205,66 @@ const AdminInternships = () => {
                       <TableCell>{record.duration ? `${record.duration} ${record.durationUnit || 'weeks'}` : 'N/A'}</TableCell>
                       <TableCell>{getStatusBadge(record.status)}</TableCell>
                       <TableCell>
-                        {(record.status === 'pending' || record.status === 'completed') && (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedRecord(record);
-                                setIsViewModalOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                            {record.certificate && (
+                        <div className="flex gap-2">
+                          {record.certificate && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`${cleanBaseUrl}${record.certificate}`, '_blank')}
+                                title="View Certificate"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleFileDownload(record.certificate, `Internship_Certificate_${record.studentName.replace(/\s+/g, '_')}`)}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {record.report && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleFileDownload(record.report, `Internship_Report_${record.studentName.replace(/\s+/g, '_')}`)}
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 hover:text-green-700 border-green-600"
-                              onClick={() => handleStatusUpdate(record._id || record.id, 'approved')}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700 border-red-600"
-                              onClick={() => handleStatusUpdate(record._id || record.id, 'rejected')}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
-                        {(record.status !== 'pending' && record.status !== 'completed') && (
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedRecord(record);
-                                setIsViewModalOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                            {record.certificate && (
-                              <Button
-                                size="sm"
-                                variant="outline"
                                 title="Download Certificate"
-                                onClick={() => handleFileDownload(record.certificate, `Internship_Certificate_${record.studentName.replace(/\s+/g, '_')}`)}
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                            )}
-                            {record.report && (
+                            </>
+                          )}
+                          {record.report && (
+                            <>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                title="Download Report"
-                                onClick={() => handleFileDownload(record.report, `Internship_Report_${record.studentName.replace(/\s+/g, '_')}`)}
+                                onClick={() => window.open(`${cleanBaseUrl}${record.report}`, '_blank')}
+                                title="View Report"
                               >
                                 <FileText className="h-4 w-4" />
                               </Button>
-                            )}
-                            <span className="text-sm text-muted-foreground flex items-center">Processed</span>
-                          </div>
-                        )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFileDownload(record.report, `Internship_Report_${record.studentName.replace(/\s+/g, '_')}`)}
+                                title="Download Report"
+                              >
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-green-600 hover:text-green-700 border-green-600"
+                            onClick={() => handleStatusUpdate(record._id || record.id, 'approved')}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700 border-red-600"
+                            onClick={() => handleStatusUpdate(record._id || record.id, 'rejected')}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

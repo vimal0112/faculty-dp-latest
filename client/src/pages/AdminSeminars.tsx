@@ -254,25 +254,25 @@ const AdminSeminars = () => {
                               Reject
                             </Button>
                           )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedRecord(record);
-                              setIsViewModalOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
                           {record.certificate && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleFileDownload(record.certificate, `Seminar_Certificate_${record.title.replace(/\s+/g, '_')}`)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`${cleanBaseUrl}${record.certificate}`, '_blank')}
+                                title="View Certificate"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFileDownload(record.certificate, `Seminar_Certificate_${record.title.replace(/\s+/g, '_')}`)}
+                                title="Download Certificate"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>

@@ -78,6 +78,10 @@ router.post(
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      if (user.status === 'inactive') {
+        return res.status(403).json({ error: "Your account is deactivated. Please contact admin." });
+      }
+
       const userData = {
         id: user._id,
         name: user.name,

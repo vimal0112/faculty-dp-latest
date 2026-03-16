@@ -693,4 +693,38 @@ router.put('/internships/:id/status', checkAdmin, async (req, res) => {
   }
 });
 
+// ========== User Control Management ==========
+router.get('/users', checkAdmin, async (req, res) => {
+  try {
+    const users = await User.find({ role: { $ne: 'admin' } })
+      .select('-password')
+      .sort({ name: 1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/users/:id/status', checkAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { status, updatedAt: Date.now() },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

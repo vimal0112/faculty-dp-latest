@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   createdAt: { type: Date, default: Date.now },
 });
 

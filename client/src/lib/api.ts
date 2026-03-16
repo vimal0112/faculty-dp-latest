@@ -921,6 +921,17 @@ export const adminAPI = {
     });
   },
 
+  // User Management
+  getUsers: async () => {
+    return apiRequest<any[]>('/admin/users');
+  },
+  toggleUserStatus: async (id: string, status: 'active' | 'inactive') => {
+    return apiRequest<any>(`/admin/users/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  },
+
   // Notifications
   getNotifications: async () => {
     return apiRequest<any[]>('/admin/notifications');

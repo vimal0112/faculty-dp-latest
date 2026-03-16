@@ -179,14 +179,24 @@ const AdminAchievements = () => {
                       <TableCell>
                         <div className="flex gap-2">
                           {record.certificate && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              title="Download Certificate"
-                              onClick={() => handleFileDownload(record.certificate, `Achievement_Certificate_${record.title.replace(/\s+/g, '_')}`)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => window.open(`${cleanBaseUrl}${record.certificate}`, '_blank')}
+                                title="View Certificate"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                title="Download Certificate"
+                                onClick={() => handleFileDownload(record.certificate, `Achievement_Certificate_${record.title.replace(/\s+/g, '_')}`)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           {record.supportingDocument && (
                             <Button

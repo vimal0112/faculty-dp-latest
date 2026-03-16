@@ -13,10 +13,13 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [stats, setStats] = useState({
     totalFaculty: 0,
-    totalFDPs: 0,
+    totalFDPsAttended: 0,
+    totalFDPsOrganized: 0,
     totalSeminars: 0,
     pendingApprovals: 0,
     totalABL: 0,
+    totalJointTeaching: 0,
+    totalAdjunctFaculty: 0,
     totalReimbursements: 0,
     totalAchievements: 0,
     totalInternships: 0,
@@ -31,11 +34,14 @@ const AdminDashboard = () => {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const [faculty, fdps, seminars, abl, reimbursements, achievements, internships] = await Promise.all([
+      const [faculty, fdpAttended, fdpOrganized, seminars, abl, jointTeaching, adjunct, reimbursements, achievements, internships] = await Promise.all([
         adminAPI.getFaculty(),
         adminAPI.getFDPAttended(),
+        adminAPI.getFDPOrganized(),
         adminAPI.getSeminars(),
         adminAPI.getABL(),
+        adminAPI.getJointTeaching(),
+        adminAPI.getAdjunctFaculty(),
         adminAPI.getReimbursements(),
         adminAPI.getAchievements(),
         adminAPI.getInternships(),
@@ -43,10 +49,13 @@ const AdminDashboard = () => {
 
       setStats({
         totalFaculty: faculty.length,
-        totalFDPs: fdps.length,
+        totalFDPsAttended: fdpAttended.length,
+        totalFDPsOrganized: fdpOrganized.length,
         totalSeminars: seminars.length,
-        pendingApprovals: fdps.filter((fdp: any) => fdp.status === 'pending').length,
+        pendingApprovals: fdpAttended.filter((fdp: any) => fdp.status === 'pending').length,
         totalABL: abl.length,
+        totalJointTeaching: jointTeaching.length,
+        totalAdjunctFaculty: adjunct.length,
         totalReimbursements: reimbursements.length,
         totalAchievements: achievements.length,
         totalInternships: internships.length,
@@ -60,9 +69,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const totalFDPs = stats.totalFDPs;
-  const totalSeminars = stats.totalSeminars;
-  const pendingApprovals = stats.pendingApprovals;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -72,7 +78,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <StatCard
           title="Total Faculty"
           value={stats.totalFaculty}
@@ -80,54 +86,74 @@ const AdminDashboard = () => {
           description="Active members"
         />
         <StatCard
-          title="Total FDPs"
-          value={totalFDPs}
+          title="FDP Attended"
+          value={stats.totalFDPsAttended}
           icon={Award}
-          description="All departments"
+          description="Participation"
         />
         <StatCard
-          title="Total Seminars"
-          value={totalSeminars}
-          icon={FileText}
-          description="This year"
+          title="FDP Organized"
+          value={stats.totalFDPsOrganized}
+          icon={TrendingUp}
+          description="Events conducted"
         />
         <StatCard
-          title="Pending Approvals"
-          value={pendingApprovals}
-          icon={Bell}
-          description="Requires attention"
-          trend={pendingApprovals > 0 ? '!' : undefined}
+          title="Adjunct Faculty"
+          value={stats.totalAdjunctFaculty}
+          icon={Users}
+          description="Guest lectures"
         />
       </div>
 
-      {/* Gap for visual separation */}
       <div className="h-4"></div>
 
-      {/* Second Row Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <StatCard
-          title="Total ABL Reports"
+          title="Joint Teaching"
+          value={stats.totalJointTeaching}
+          icon={FileText}
+          description="Collaborative"
+        />
+        <StatCard
+          title="Pending Approvals"
+          value={stats.pendingApprovals}
+          icon={Bell}
+          trend={stats.pendingApprovals > 0 ? '!' : undefined}
+        />
+        <StatCard
+          title="Seminars"
+          value={stats.totalSeminars}
+          icon={FileText}
+          description="Academic"
+        />
+        <StatCard
+          title="ABL Reports"
           value={stats.totalABL}
           icon={TrendingUp}
-          description="Activity based learning"
+          description="Activity based"
         />
+      </div>
+
+      <div className="h-4"></div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <StatCard
-          title="Total Reimbursements"
+          title="Reimbursements"
           value={stats.totalReimbursements}
           icon={DollarSign}
-          description="Payment requests"
+          description="Payments"
         />
         <StatCard
-          title="Total Achievements"
+          title="Achievements"
           value={stats.totalAchievements}
           icon={Trophy}
-          description="Faculty accomplishments"
+          description="Faculty awards"
         />
         <StatCard
-          title="Total Internships"
+          title="Internships"
           value={stats.totalInternships}
           icon={Briefcase}
-          description="Faculty interns"
+          description="Guided"
         />
       </div>
 
